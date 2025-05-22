@@ -1,0 +1,16 @@
+{
+    "name": "GPTActions.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:343f8b7ce9bec4b23b7540dcfa2e84cf"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
