@@ -45,10 +45,16 @@ namespace GPTUnity.Actions
                     // Search for specific GameObject
                     if (UnityAiHelpers.TryGetComponentTypeByType(TargetTypeName, out var targetType))
                     {
+#if UNITY_2023_1_OR_NEWER
                         var objects = GameObject.FindObjectsByType(
                             targetType,
                             FindObjectsInactive.Include,
                             FindObjectsSortMode.None);
+#else
+                        var objects = GameObject.FindObjectsOfType(
+                            targetType,
+                            true);
+#endif
 
                         var gameObjects = objects
                             .OfType<Component>()
