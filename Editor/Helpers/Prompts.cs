@@ -21,7 +21,8 @@ namespace GPTUnity.Helpers
                                        "Execute all of them step-by-step until the full instruction is complete.\n\n" +
 
                                        "If a script exposes a field, assume it needs to be populated. " +
-                                       "If a GameObject is referenced, assume it must be created or found. " +
+                                       "If a GameObject is referenced, assume it must be created or found. The GameObject should always referenced by full path: RootGameObject or RootGameObject/ChildGameObject." +
+                                       "If you still can not find the GameObject - Query the opened scenes and only after that create a new one" +
                                        "If a prefab is mentioned, create it, configure it, and assign it. " +
                                        "Do not reference scripts unless it was already generated otherwise we will get script not found errors." +
                                        "If a reference is declared in a script, create the corresponding object and link it.\n\n" +

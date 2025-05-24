@@ -2,42 +2,72 @@ using System;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace GPTUnity.Actions
 {
     [GPTAction("Spawns a new (or existing) prefab at a specified position.")]
     public class SpawnGameObjectAction : GPTActionBase
     {
-        [GPTParameter("Prefab asset path")] public string PrefabAssetPath { get; set; }
+        [GPTParameter("Prefab asset path")] 
+        public string PrefabAssetPath { get; set; }
 
-        [GPTParameter("Spawn position in 'x,y,z' format")]
+        [GPTParameter("Parent GameObject name. Can be a path like Canvas/Panel/Button")]
+        public string ParentObjectName { get; set; }
+
+        [GPTParameter("New position in 'x,y,z' format. Leave empty if no change.")]
         public string Position { get; set; }
 
-        public override string Content => $"Spawned '{Highlight(PrefabAssetPath)}' at '{Highlight(Position)}'";
+        [GPTParameter("New rotation in 'x,y,z' format. Leave empty if no change.")]
+        public string Rotation { get; set; }
+
+        [GPTParameter("New scale in 'x,y,z' format. Leave empty if no change.")]
+        public string Scale { get; set; }
+
+        [GPTParameter("New local position in 'x,y,z' format. Leave empty if no change.")]
+        public string LocalPosition { get; set; }
+
+        [GPTParameter("New local rotation in 'x,y,z' format. Leave empty if no change.")]
+        public string LocalRotation { get; set; }
+
+        public override string Content => $"Spawned '{PrefabAssetPath}' at '{Position}'";
+        
+        public override string Description => $"Spawned '{Highlight(PrefabAssetPath)}' at '{Highlight(Position)}'";
 
         public override void Execute()
         {
 #if UNITY_EDITOR
-            // This assumes your prefab is in Resources or something similar
-            // Alternatively, you can do Editor asset lookups
-            var pos = ParseVector3(Position);
-
+            
             if (!UnityAiHelpers.TryFindAsset(PrefabAssetPath, typeof(GameObject), out var asset))
-                throw new Exception($"Prefab '{PrefabAssetPath}' not found in Resources.");
+                throw new Exception($"Prefab '{PrefabAssetPath}' not found!");
+            
+            var go = Object.Instantiate(asset as GameObject);
+            
+            if (UnityAiHelpers.TryFindGameObject(ParentObjectName, out var parent))
+            {
+                go.transform.SetParent(parent.transform);
+            }
+            
+            if (UnityAiHelpers.TryParseVector3(Position, out var position))
+                go.transform.position = position;
 
-            var instance = GameObject.Instantiate(asset as GameObject, pos, Quaternion.identity);
-            Undo.RegisterCreatedObjectUndo(instance, "Spawn GameObject");
-#endif
-        }
+            if (UnityAiHelpers.TryParseVector3(Rotation, out var rotation))
+                go.transform.eulerAngles = rotation;
 
-        private Vector3 ParseVector3(string input)
-        {
-            var parts = input.Split(',');
-            if (parts.Length != 3) return Vector3.zero;
-            float.TryParse(parts[0], out float x);
-            float.TryParse(parts[1], out float y);
-            float.TryParse(parts[2], out float z);
-            return new Vector3(x, y, z);
+            if (UnityAiHelpers.TryParseVector3(Scale, out var scale))
+                go.transform.localScale = scale;
+
+            if (UnityAiHelpers.TryParseVector3(LocalPosition, out var localPosition))
+                go.transform.localPosition = localPosition;
+
+            if (UnityAiHelpers.TryParseVector3(LocalRotation, out var localRotation))
+                go.transform.localEulerAngles = localRotation;
+
+            Undo.RegisterCreatedObjectUndo(go, "Spawn GameObject");
+
+            Result = $"Prefab '{PrefabAssetPath}' spawned at {go.PathToGameObject()}";
+            
+            #endif
         }
     }
 }

@@ -141,6 +141,8 @@ public partial class ChatEditorWindow
 
         root.Add(_bottomBar);
         rootVisualElement.Add(root);
+        
+        _messagesScrollView.scrollOffset = _lastScrollOffset;
 
         OnGUICreated();
     }

@@ -99,12 +99,13 @@ namespace GPTUnity.Helpers
             // https://forum.unity.com/threads/how-to-find-inactive-gameobject-by-name.123456/
             
             gameObject = FindIncludingInactiveRootObjectInAllScenes(path);
-            if (!gameObject)
-            {
-                var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
-                throw new Exception($"Could not find game object at path: {path}. " +
-                                    $"Found: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
-            }
+            
+            // if (!gameObject)
+            // {
+            //     var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
+            //     throw new Exception($"Could not find game object at path: {path}. " +
+            //                         $"Found: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
+            // }
             
             return gameObject;
         }

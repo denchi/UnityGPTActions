@@ -5,7 +5,10 @@ using UnityEngine;
 
 public abstract class GPTActionBase : IGPTAction
 {
+    public virtual string Result { get; set; }
+    
     public virtual string Content { get; }
+    
     public virtual string Description => Content;
     
     public abstract void Execute();
@@ -65,7 +68,7 @@ public abstract class GPTActionBase : IGPTAction
     public static string Highlight(string value)
     {
         //return $"<color=#{ColorUtility.ToHtmlStringRGBA(ChatSettings.instance.ColorHighlight)}>{value}</color>";
-        return $"<color=orange>{value}</color>";
+        return $"<color=#408DFF>{value}</color>";
     }
     
     protected static string Error(string value)

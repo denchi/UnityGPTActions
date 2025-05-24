@@ -37,7 +37,7 @@ namespace GPTUnity.Helpers
 
         public Texture2D LoadEditorIcon(string name)
         {
-            return AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/ChatGPTAssistant/Editor/Icons/{name}.png");
+            return AssetDatabase.LoadAssetAtPath<Texture2D>($"Packages/gptactions/Editor/Icons/{name}.png");
         }
 
         public Texture2D LoadUnityIcon(string iconName)

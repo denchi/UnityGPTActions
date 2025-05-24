@@ -14,5 +14,22 @@ namespace GPTUnity.Helpers
         {
             return new Color(color.r, color.g, color.b, alpha);
         }
+        
+        public static string PathToGameObject(this GameObject go)
+        {
+            if (go == null)
+                return string.Empty;
+
+            var path = go.name;
+            var parent = go.transform.parent;
+
+            while (parent != null)
+            {
+                path = parent.name + "/" + path;
+                parent = parent.parent;
+            }
+
+            return path;
+        }
     }
 }

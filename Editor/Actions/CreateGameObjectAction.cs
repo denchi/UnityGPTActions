@@ -40,9 +40,29 @@ namespace GPTUnity.Actions
         public override void Execute()
         {
 #if UNITY_EDITOR
+
+            ObjectName = ObjectName.Trim('/');
+
+            GameObject parentGameObject = null;
+            
+            if (ObjectName.Contains("/"))
+            {
+                // Create a new GameObject with the specified name and path
+                var path = ObjectName.Substring(0, ObjectName.LastIndexOf('/'));
+
+                if (!UnityAiHelpers.TryFindGameObject(path, out parentGameObject))
+                    throw new Exception("Could not find parent GameObject: " + path);
+                
+                ObjectName = ObjectName.Substring(ObjectName.LastIndexOf('/') + 1);
+            }
+            
             var go = new GameObject(ObjectName);
 
-            if (UnityAiHelpers.TryFindGameObject(ParentObjectName, out var parent))
+            if (parentGameObject)
+            {
+                go.transform.SetParent(parentGameObject.transform);
+            }
+            else if (UnityAiHelpers.TryFindGameObject(ParentObjectName, out var parent))
             {
                 go.transform.SetParent(parent.transform);
             }
@@ -79,6 +99,8 @@ namespace GPTUnity.Actions
                 go.transform.localEulerAngles = localRotation;
 
             Undo.RegisterCreatedObjectUndo(go, "Create GameObject");
+            
+            Result = $"GameObject '{ObjectName}' created at {go.PathToGameObject()}";
 #endif
         }
     }

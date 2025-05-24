@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using GptActions.Editor.AssetIndexer;
 using GPTUnity.Actions;
 using GPTUnity.Data;
 using GPTUnity.Helpers;
@@ -94,10 +95,11 @@ public partial class ChatEditorWindow : EditorWindow
             var value = JsonConvert.SerializeObject(deserializedValue);
             EditorPrefs.SetString(field.Name, value);
             Debug.Log($"Saved value for {field.Name} = {value}");
-            
         }
         
         //_messageHistory.Save();
+        
+        _lastScrollOffset = _messagesScrollView.scrollOffset;
     }
 
     #endregion
@@ -201,9 +203,7 @@ public partial class ChatEditorWindow : EditorWindow
                     .FirstOrDefault(x => x.id == toolMessage.tool_call_id);
                 
                 if (toolCall == null)
-                {
                     throw new Exception($"Could not find tool with id in parent message: {toolMessage.tool_call_id}");
-                }
 
                 var action = _gptActionsFactory.CreateActionFromFunctionCall(toolCall.function);
                 if (action == null) 
@@ -215,9 +215,11 @@ public partial class ChatEditorWindow : EditorWindow
                 }
                 else
                 {
+                    action.Result = toolMessage.content;
+                    
                     AddMessageVisualElementWithData(toolMessage, action: action);
                 }
-
+                
                 continue;
             }
 
@@ -382,6 +384,9 @@ public partial class ChatEditorWindow : EditorWindow
             messages,
             tools = _gptTypesRegister.Tools,
             tool_choice = "auto",
+            // file_search = new {
+            //     file_ids =  new [] { OpenAIFileTracker.Instance.lastFileId }  // ✅ Use file ID returned above
+            // },
             max_tokens = 8192
         };
         
@@ -520,7 +525,7 @@ public partial class ChatEditorWindow : EditorWindow
         {
             action.Execute();
                 
-            toolMessage.content = action.Content;
+            toolMessage.content = string.IsNullOrEmpty(action.Result) ? action.Content : action.Result;
                 
             AddMessageVisualElementWithData(
                 toolMessage, 
@@ -710,10 +715,42 @@ public partial class ChatEditorWindow : EditorWindow
     {
         AddMessageVisualElement("system", Prompts.SystemMessage);
     }
+
+    private Vector2 _lastScrollOffset;
+    private Vector2 _targetScrollOffset;
+    private Vector2 _startScrollOffset;
+    private float _scrollStartTime;
+    private bool _isScrolling;
+    private const float SCROLL_DURATION = 0.3f;
     
     private void ScrollToTheEnd()
     {
-        _messagesScrollView.scrollOffset = new Vector2(0, _messagesScrollView.contentContainer.worldBound.height);
+        _startScrollOffset = _messagesScrollView.scrollOffset;
+        _targetScrollOffset = new Vector2(0, _messagesScrollView.contentContainer.worldBound.height);
+        _scrollStartTime = (float)EditorApplication.timeSinceStartup;
+        _isScrolling = true;
+        
+        EditorApplication.update -= SmoothScrollUpdate;
+        EditorApplication.update += SmoothScrollUpdate;
+    }
+
+    private void SmoothScrollUpdate()
+    {
+        if (!_isScrolling) return;
+
+        float elapsed = (float)EditorApplication.timeSinceStartup - _scrollStartTime;
+        float progress = Mathf.Clamp01(elapsed / SCROLL_DURATION);
+        
+        // Use smooth step for easing
+        progress = Mathf.SmoothStep(0, 1, progress);
+        
+        _messagesScrollView.scrollOffset = Vector2.Lerp(_startScrollOffset, _targetScrollOffset, progress);
+
+        if (progress >= 1)
+        {
+            _isScrolling = false;
+            EditorApplication.update -= SmoothScrollUpdate;
+        }
     }
     
     private static GPTMessage GetParentAssistantMessageWithTools(int i, List<GPTMessage> messages)
