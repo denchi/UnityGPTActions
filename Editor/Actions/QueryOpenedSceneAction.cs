@@ -24,6 +24,7 @@ namespace GPTUnity.Actions
             var activeScene = SceneManager.GetActiveScene();
             var sb = new StringBuilder();
 
+            // Have a root game object
             if (!string.IsNullOrEmpty(TargetName))
             {
                 // Search for specific GameObject

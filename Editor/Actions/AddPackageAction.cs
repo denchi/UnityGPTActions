@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor.PackageManager;
+using UnityEditor.PackageManager.Requests;
+#endif
 
 namespace GPTUnity.Actions
 {
@@ -20,39 +24,32 @@ namespace GPTUnity.Actions
 
         public override async Task<string> Execute()
         {
-            #if UNITY_EDITOR
-            
+#if UNITY_EDITOR
             if (string.IsNullOrEmpty(PackageName))
             {
                 throw new Exception("Package name and version cannot be empty.");
             }
-            
+
             if (string.IsNullOrEmpty(Version))
             {
                 throw new Exception("Package name and version cannot be empty.");
             }
-            
-            var manifestPath = Path.Combine(Application.dataPath, "../Packages/manifest.json");
-            if (!File.Exists(manifestPath))
-            {
-                throw new Exception("manifest.json not found.");
-            }
-            
-            var json = File.ReadAllText(manifestPath);
-            var jp = Newtonsoft.Json.Linq.JObject.Parse(json);
-            var dependencies = jp["dependencies"] as Newtonsoft.Json.Linq.JObject;
-            if (dependencies == null)
-            {
-                dependencies = new Newtonsoft.Json.Linq.JObject();
-                jp["dependencies"] = dependencies;
-            }
-            
-            dependencies[PackageName] = Version;
-            var newJson = jp.ToString(Formatting.Indented);
-            File.WriteAllText(manifestPath, newJson);
 
-            return $"Added package: {PackageName + "@" + Version}";
+            string packageId = $"{PackageName}@{Version}";
+            AddRequest request = Client.Add(packageId);
 
+            // Wait for the request to complete
+            while (!request.IsCompleted)
+            {
+                await Task.Delay(100);
+            }
+
+            if (request.Status == StatusCode.Failure)
+            {
+                throw new Exception($"Failed to add package: {request.Error.message}");
+            }
+
+            return $"Added package: {packageId}";
 #endif
         }
     }
