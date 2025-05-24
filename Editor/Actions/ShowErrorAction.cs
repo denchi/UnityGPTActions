@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
@@ -9,10 +10,6 @@ namespace GPTUnity.Actions
         public Exception Exception { get; }
         public IGPTAction Action { get; }
         public string Name { get; }
-
-        public override string Content => Exception.Message;
-        
-        public override string Description => $"Error using {Action?.GetType().Name ?? Name}: <color=red>{Content}</color>";
 
         public ShowErrorAction(IGPTAction action, Exception exception)
         {
@@ -26,9 +23,9 @@ namespace GPTUnity.Actions
             Name = name;
         }
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
-            //  
+            return $"{Exception.Message}";
         }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -32,12 +33,7 @@ namespace GPTUnity.Actions
         [GPTParameter("New local rotation in 'x,y,z' format. Leave empty if no change.")]
         public string LocalRotation { get; set; }
 
-        public override string Content => $"Created game object named: '{Highlight(ObjectName)}'" +
-                                          (string.IsNullOrEmpty(Components)
-                                              ? ""
-                                              : $" and components: {Highlight(Components)}");
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
 
@@ -100,7 +96,7 @@ namespace GPTUnity.Actions
 
             Undo.RegisterCreatedObjectUndo(go, "Create GameObject");
             
-            Result = $"GameObject '{ObjectName}' created at {go.PathToGameObject()}";
+            return $"GameObject '{ObjectName}' created at {go.PathToGameObject()}";
 #endif
         }
     }

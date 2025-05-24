@@ -523,9 +523,8 @@ public partial class ChatEditorWindow : EditorWindow
     {
         try
         {
-            action.Execute();
-                
-            toolMessage.content = string.IsNullOrEmpty(action.Result) ? action.Content : action.Result;
+            action.Result = await action.Execute();
+            toolMessage.content = action.Result;
                 
             AddMessageVisualElementWithData(
                 toolMessage, 
@@ -545,7 +544,9 @@ public partial class ChatEditorWindow : EditorWindow
         }
         catch (Exception ex)
         {
+            action.Result = ex.Message;
             toolMessage.content = ex.Message;
+            
             AddMessageVisualElementWithData(
                 toolMessage, 
                 action: new ShowErrorAction(action, ex));
@@ -826,9 +827,11 @@ public partial class ChatEditorWindow : EditorWindow
         
         container.Add(titleLabel);
 
-        if (!string.IsNullOrEmpty(action.Description))
+        //var description = action.Description;
+        var description = action.Result;
+        if (!string.IsNullOrEmpty(description))
         {
-            var contentLabel = new Label(action.Description.Length <= 10000 ? action.Description : action.Description.Substring(0, 10000) );
+            var contentLabel = new Label(description.Length <= 10000 ? description : description.Substring(0, 10000) );
             contentLabel.style.whiteSpace = WhiteSpace.Normal;
             contentLabel.style.color = Color.white;
             container.Add(contentLabel);

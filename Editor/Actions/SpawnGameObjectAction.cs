@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -30,14 +31,11 @@ namespace GPTUnity.Actions
         [GPTParameter("New local rotation in 'x,y,z' format. Leave empty if no change.")]
         public string LocalRotation { get; set; }
 
-        public override string Content => $"Spawned '{PrefabAssetPath}' at '{Position}'";
-        
         public override string Description => $"Spawned '{Highlight(PrefabAssetPath)}' at '{Highlight(Position)}'";
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
-            
             if (!UnityAiHelpers.TryFindAsset(PrefabAssetPath, typeof(GameObject), out var asset))
                 throw new Exception($"Prefab '{PrefabAssetPath}' not found!");
             
@@ -65,7 +63,8 @@ namespace GPTUnity.Actions
 
             Undo.RegisterCreatedObjectUndo(go, "Spawn GameObject");
 
-            Result = $"Prefab '{PrefabAssetPath}' spawned at {go.PathToGameObject()}";
+            
+            return $"Prefab '{PrefabAssetPath}' spawned at {go.PathToGameObject()}";
             
             #endif
         }

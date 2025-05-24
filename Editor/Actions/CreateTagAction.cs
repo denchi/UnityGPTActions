@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,11 +8,11 @@ namespace GPTUnity.Actions
     [GPTAction("Creates a new tag.")]
     public class CreateTagAction : GPTActionBase
     {
-        [GPTParameter("Name of the new tag")] public string TagName { get; set; }
+        [GPTParameter("Name of the new tag")] 
+        public string TagName { get; set; }
 
-        public override string Content => $"Created new tag: {Highlight(TagName)}";
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             if (string.IsNullOrEmpty(TagName))
@@ -19,7 +20,7 @@ namespace GPTUnity.Actions
 
             var tags = UnityEditorInternal.InternalEditorUtility.tags;
             if (Array.Exists(tags, tag => tag == TagName))
-                return;
+                return $"Tag '{TagName}' already exists.";
 
             SerializedObject tagManager =
                 new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
@@ -29,13 +30,13 @@ namespace GPTUnity.Actions
             {
                 SerializedProperty tag = tagsProp.GetArrayElementAtIndex(i);
                 if (tag.stringValue == TagName)
-                    return; // Tag already exists
+                    return $"Tag '{TagName}' already exists.";
             }
 
             tagsProp.InsertArrayElementAtIndex(tagsProp.arraySize);
             tagsProp.GetArrayElementAtIndex(tagsProp.arraySize - 1).stringValue = TagName;
             tagManager.ApplyModifiedProperties();
-            Debug.Log($"Tag '{TagName}' created.");
+            return $"Tag '{TagName}' created.";
 #endif
         }
     }

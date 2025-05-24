@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEngine;
 
@@ -19,9 +20,7 @@ namespace GPTUnity.Actions
         [GPTParameter("New scale in 'x,y,z' format. Leave empty if no change.")]
         public string Scale { get; set; }
 
-        public override string Content => $"Transformed '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var go))
             {
@@ -34,6 +33,8 @@ namespace GPTUnity.Actions
                 go.transform.eulerAngles = ParseVector3(Rotation);
             if (!string.IsNullOrEmpty(Scale))
                 go.transform.localScale = ParseVector3(Scale);
+            
+            return $"Transformed GameObject '{ObjectName}' with Position: {Position}, Rotation: {Rotation}, Scale: {Scale}.";
         }
 
         private Vector3 ParseVector3(string input)

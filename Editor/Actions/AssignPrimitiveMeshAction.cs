@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEngine;
 
@@ -15,12 +16,10 @@ namespace GPTUnity.Actions
         [GPTParameter("Name of the GameObject")]
         public string ObjectName { get; set; }
 
-        public override string Content => $"Assigned {PrimitiveType} mesh to '{ObjectName}'.";
-
         public override string Description =>
             $"Assigned {Highlight(PrimitiveType.ToString())} mesh to {Highlight(ObjectName)}.";
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var gameObject))
@@ -53,7 +52,7 @@ namespace GPTUnity.Actions
 
             meshFilter.sharedMesh = mesh;
 
-            Debug.Log($"Assigned {PrimitiveType} mesh to '{ObjectName}'.");
+            return $"Assigned {PrimitiveType} mesh to '{ObjectName}'.";
 #endif
         }
 

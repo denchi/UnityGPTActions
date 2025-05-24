@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public abstract class GPTActionBase : IGPTAction
 {
     public virtual string Result { get; set; }
     
-    public virtual string Content { get; }
-    
-    public virtual string Description => Content;
-    
-    public abstract void Execute();
+    // public virtual string Content { get; }
+
+    public virtual string Description => Result;
+
+    public abstract Task<string> Execute();
 
     public void InitializeParameters(Dictionary<string, string> arguments)
     {
@@ -67,7 +68,6 @@ public abstract class GPTActionBase : IGPTAction
 
     public static string Highlight(string value)
     {
-        //return $"<color=#{ColorUtility.ToHtmlStringRGBA(ChatSettings.instance.ColorHighlight)}>{value}</color>";
         return $"<color=#408DFF>{value}</color>";
     }
     

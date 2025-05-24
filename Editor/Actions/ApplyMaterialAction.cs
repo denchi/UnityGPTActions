@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEngine;
 
@@ -13,10 +14,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Path to the material asset. Ex: Assets/Materials/NewMaterial.mat")]
         public string MaterialAssetPath { get; set; }
 
-        public override string Content =>
-            $"Applied material '{Highlight(MaterialAssetPath)}' to '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var go))
             {
@@ -35,6 +33,8 @@ namespace GPTUnity.Actions
             }
 
             renderer.sharedMaterial = material as Material; // or renderer.material
+            
+            return $"Applied material '{MaterialAssetPath}' to '{ObjectName}'.";
         }
     }
 }

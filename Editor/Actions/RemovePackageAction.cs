@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -12,11 +13,9 @@ namespace GPTUnity.Actions
         [GPTParameter("Name of the package to remove, e.g. com.unity.textmeshpro")]
         public string PackageName { get; set; }
 
-        public override string Content => $"Removed package: {PackageName}";
-        
         public override string Description => $"Removed package: {Highlight(PackageName)}";
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             #if UNITY_EDITOR
             
@@ -43,6 +42,8 @@ namespace GPTUnity.Actions
             dependencies.Remove(PackageName);
             var newJson = jp.ToString(Formatting.Indented);
             File.WriteAllText(manifestPath, newJson);
+            
+            return $"Removed package '{PackageName}' from manifest.json.";
             
             #endif
         }

@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using UnityEditor;
 
 namespace GPTUnity.Actions
@@ -10,12 +11,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Settings asset path, e.g. 'ProjectSettings/PlayerSettings.asset'")]
         public string AssetPath { get; set; }
 
-        private string _content;
-
-        public override string Content =>
-            $"<b>Serialized properties in:</b> {Highlight(AssetPath)}\n\n<pre>{_content}</pre>";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             var assets = AssetDatabase.LoadAllAssetsAtPath(AssetPath);
@@ -31,7 +27,7 @@ namespace GPTUnity.Actions
                 sb.AppendLine($"{prop.propertyPath} = {GetValue(prop)}");
             }
 
-            _content = sb.ToString();
+            return sb.ToString();
 #endif
         }
 

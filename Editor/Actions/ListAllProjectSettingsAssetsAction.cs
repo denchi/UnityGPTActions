@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using UnityEditor;
 
 namespace GPTUnity.Actions
@@ -8,11 +9,7 @@ namespace GPTUnity.Actions
     [GPTAction("Lists all settings assets found in the ProjectSettings folder.")]
     public class ListAllProjectSettingsAssetsAction : GPTActionBase
     {
-        private string _result;
-
-        public override string Content => $"<b>Project Settings Assets:</b>\n\n<pre>{_result}</pre>";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             string settingsPath = "ProjectSettings";
@@ -34,7 +31,7 @@ namespace GPTUnity.Actions
                 sb.AppendLine($"{assetPath} → {assetTypes}");
             }
 
-            _result = sb.ToString();
+            return sb.ToString();
 #endif
         }
     }

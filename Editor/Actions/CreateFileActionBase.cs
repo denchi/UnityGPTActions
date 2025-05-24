@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,15 +18,19 @@ namespace GPTUnity.Actions
         public override string Description =>
             $"File <color=yellow>{FileName}{FileExtension}</color> created at <color=yellow>{PathToDirectory}</color>";
 
+        public virtual string Content { get; protected set; }
+
         public void CreateFile(string overridePath = null)
         {
             var path = overridePath ?? GetOutputPath();
             CreateFile(Content, path);
         }
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             CreateFile();
+            
+            return $"File {FileName}{FileExtension} created at {PathToDirectory}";
         }
 
         //

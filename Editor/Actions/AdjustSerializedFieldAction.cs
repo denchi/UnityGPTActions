@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -21,9 +22,7 @@ namespace GPTUnity.Actions
         [GPTParameter("New value as string")]
         public string Value { get; set; }
         
-        public override string Content => $"Set field '{Highlight(FieldName)}' to '{Highlight(Value)}' on '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (!UnityAiHelpers.TryGetComponentTypeByType(ComponentTypeName, out var type))
                 throw new Exception($"Component type '{ComponentTypeName}' not found.");
@@ -53,6 +52,8 @@ namespace GPTUnity.Actions
             }
 
             EditorUtility.SetDirty(go);
+
+            return $"Set field '{FieldName}' to '{Value}' on '{ObjectName}'";
         }
         
         private object ConvertValue(string value, Type targetType, Component context = null)

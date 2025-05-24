@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 
 namespace GPTUnity.Actions
@@ -11,16 +12,16 @@ namespace GPTUnity.Actions
         [GPTParameter("true to activate, false to deactivate")]
         public bool ActiveState { get; set; }
 
-        public override string Content => ActiveState
-            ? $"Activated GameObject '{Highlight(ObjectName)}'"
-            : $"Deactivated GameObject '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var go))
                 throw new Exception($"Child GameObject '{ObjectName}' not found.");
 
             go.SetActive(ActiveState);
+            
+            return ActiveState
+                ? $"GameObject '{ObjectName}' activated."
+                : $"GameObject '{ObjectName}' deactivated.";
         }
     }
 }

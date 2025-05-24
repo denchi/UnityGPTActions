@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
@@ -11,15 +12,10 @@ namespace GPTUnity.Actions
         [GPTParameter("Serialized property path, e.g. 'productName'")]
         public string PropertyPath { get; set; }
 
-        private string _value;
+        // public override string Description =>
+        //     $"'{Highlight(AssetPath)}' property '{Highlight(PropertyPath)}' value: {Highlight(_value)}";
 
-        public override string Content =>
-            $"'{AssetPath}' property '{PropertyPath}' value: {_value}";
-        
-        public override string Description =>
-            $"'{Highlight(AssetPath)}' property '{Highlight(PropertyPath)}' value: {Highlight(_value)}";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(AssetPath);
@@ -31,7 +27,7 @@ namespace GPTUnity.Actions
             if (prop == null)
                 throw new Exception($"Could not find property: {PropertyPath}. To see available properties try to dump all properties action!");
 
-            _value = GetPropertyValueAsString(prop);
+            return GetPropertyValueAsString(prop);
 #endif
         }
 

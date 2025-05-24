@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 
 namespace GPTUnity.Actions
@@ -12,11 +13,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Parent GameObject name, empty to unparent")]
         public string ParentObject { get; set; }
 
-        public override string Content => string.IsNullOrEmpty(ParentObject)
-            ? $"Unparented '{Highlight(ChildObject)}'"
-            : $"Parented '{Highlight(ChildObject)}' to '{Highlight(ParentObject)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (!UnityAiHelpers.TryFindGameObject(ChildObject, out var child))
             {
@@ -27,7 +24,7 @@ namespace GPTUnity.Actions
             {
                 // Unparent
                 child.transform.SetParent(null);
-                return;
+                return $"Unparented '{ChildObject}'.";
             }
 
             if (!UnityAiHelpers.TryFindGameObject(ParentObject, out var parent))
@@ -36,6 +33,8 @@ namespace GPTUnity.Actions
             }
 
             child.transform.SetParent(parent.transform);
+            
+            return $"Parented '{ChildObject}' to '{ParentObject}'.";
         }
     }
 }

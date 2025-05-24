@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -14,10 +15,9 @@ namespace GPTUnity.Actions
         [GPTParameter("GameObject name to make a prefab from")]
         public string GameObjectName { get; set; }
 
-        public override string Content => $"Created prefab '{PrefabAssetPath}'";
         public override string Description => $"Created prefab '{Highlight(PrefabAssetPath)}'";
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             if (string.IsNullOrEmpty(PrefabAssetPath))
@@ -43,7 +43,7 @@ namespace GPTUnity.Actions
             }
 
             PrefabUtility.SaveAsPrefabAssetAndConnect(gameObject, PrefabAssetPath, InteractionMode.UserAction);
-            Debug.Log($"Prefab created at: {PrefabAssetPath}");
+            return $"Prefab created at: {PrefabAssetPath}";
 #endif
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,9 +11,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Name of the new layer")]
         public string LayerName { get; set; }
 
-        public override string Content => $"Created new layer: {Highlight(LayerName)}";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             if (string.IsNullOrEmpty(LayerName))
@@ -20,7 +19,7 @@ namespace GPTUnity.Actions
 
             var layers = UnityEditorInternal.InternalEditorUtility.layers;
             if (Array.Exists(layers, layer => layer == LayerName))
-                return;
+                return $"Layer '{LayerName}' already exists.";
 
             SerializedObject tagManager =
                 new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
@@ -33,8 +32,7 @@ namespace GPTUnity.Actions
                 {
                     layer.stringValue = LayerName;
                     tagManager.ApplyModifiedProperties();
-                    Debug.Log($"Layer '{LayerName}' created.");
-                    return;
+                    return $"Layer '{LayerName}' created.";
                 }
             }
 

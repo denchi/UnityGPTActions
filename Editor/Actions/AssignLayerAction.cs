@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEngine;
 
@@ -13,9 +14,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Name of the layer to assign")]
         public string LayerName { get; set; }
 
-        public override string Content => $"Assigned layer '{Highlight(LayerName)}' to '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             if (string.IsNullOrEmpty(LayerName))
@@ -29,7 +28,8 @@ namespace GPTUnity.Actions
                 throw new Exception($"Layer '{LayerName}' does not exist.");
 
             go.layer = layer;
-            Debug.Log($"Assigned layer '{LayerName}' to GameObject '{ObjectName}'.");
+            
+            return $"Assigned layer '{LayerName}' to GameObject '{ObjectName}'.";
 #endif
         }
     }

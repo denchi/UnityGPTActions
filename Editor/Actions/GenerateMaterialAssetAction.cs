@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -28,7 +29,6 @@ namespace GPTUnity.Actions
         [GPTParameter("Shader params: Ex: _color:0.1,0.2,1,1:color;_mainTex:Assets/Textures/1.png:texture;_value:0.1:float;_intensity:2:int;_dir:0.1,0.2,1,1:vector;")]
         public string ShaderParams { get; set; }
 
-        public override string Content => $"Created material {FileName}";
         public override string Description => $"Created material {Highlight(FileName)}";
 
         // public static object ShaderParamsSchema() => new
@@ -47,7 +47,7 @@ namespace GPTUnity.Actions
         //     }
         // };
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             var shaderAsset = default(Shader);
@@ -86,7 +86,7 @@ namespace GPTUnity.Actions
             AssetDatabase.CreateAsset(material, matPath);
             AssetDatabase.Refresh();
             
-            Debug.Log($"Created new material '{material.name}'.");
+            return $"Created new material '{material.name} at {matPath}'.";
 #endif
         }
 

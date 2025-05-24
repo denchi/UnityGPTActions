@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace GPTUnity.Actions
@@ -11,13 +12,11 @@ namespace GPTUnity.Actions
         [GPTParameter("The explanation of this error")]
         public string ErrorExplanation { get; set; }
 
-        public override string Content => ErrorExplanation;
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             // In a real scenario, you might parse the message, do some heuristics,
             // or even feed it back to ChatGPT. For now, just log it.
-            Debug.Log($"Error: {Error(ErrorMessage)}");
+            return $"Error: {ErrorMessage}";
         }
     }
 }

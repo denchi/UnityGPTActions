@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
@@ -13,10 +14,7 @@ namespace GPTUnity.Actions
 
         [GPTParameter("New value as string")] public string Value { get; set; }
 
-        public override string Content =>
-            $"Set '{Highlight(AssetPath)}' property '{Highlight(PropertyPath)}' to {Highlight(Value)}";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             var assets = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(AssetPath);
@@ -30,6 +28,8 @@ namespace GPTUnity.Actions
 
             SetPropertyValue(prop, Value);
             so.ApplyModifiedProperties();
+            
+            return $"Set '{AssetPath}' property '{PropertyPath}' to {Value}";
 #endif
         }
 

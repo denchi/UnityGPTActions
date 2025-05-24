@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using System.Text.RegularExpressions;
-using UnityEngine;
+using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
@@ -13,13 +13,12 @@ namespace GPTUnity.Actions
         [GPTParameter("Path to the C# script file")]
         public string Input { get; set; }
 
-        public override string Content => _result;
-        public override string Description => _description;
+        // public override string Description => _description;
+        //
+        // private string _result = "";
+        // private string _description = "";
 
-        private string _result = "";
-        private string _description = "";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (string.IsNullOrEmpty(Input))
             {
@@ -33,13 +32,13 @@ namespace GPTUnity.Actions
             }
 
             string sourceCode = File.ReadAllText(filePath);
-            AnalyzeScript(sourceCode);
+            
+            return AnalyzeScript(sourceCode);
         }
 
-        private void AnalyzeScript(string sourceCode)
+        private string AnalyzeScript(string sourceCode)
         {
             var sb = new StringBuilder();
-            var descSb = new StringBuilder();
 
             // Extract namespace
             var namespaceMatch = Regex.Match(sourceCode, @"namespace\s+([^\s{]+)");
@@ -48,14 +47,8 @@ namespace GPTUnity.Actions
             // Extract classes
             var classMatches = Regex.Matches(sourceCode, @"(?:public|private|protected|internal)?\s*class\s+(\w+)");
             
-            // Extract methods
+            // Extra ct methods
             var methodMatches = Regex.Matches(sourceCode, @"(?:public|private|protected|internal)?\s+(?:static\s+)?(?:<[^>]+>\s+)?[\w<>[\]]+\s+(\w+)\s*\([^)]*\)");
-
-            // Build description
-            descSb.AppendLine($"Analysis of {Path.GetFileName(Input)}:");
-            descSb.AppendLine($"- Namespace: {Highlight(namespaceName)}");
-            descSb.AppendLine($"- Classes found: {Highlight(classMatches.Count.ToString())}");
-            descSb.AppendLine($"- Methods found: {Highlight(methodMatches.Count.ToString())}");
 
             // Build detailed content
             sb.AppendLine($"C# Script Analysis - {Path.GetFileName(Input)}");
@@ -72,8 +65,7 @@ namespace GPTUnity.Actions
                 sb.AppendLine($"- {methodMatch.Groups[1].Value}");
             }
 
-            _description = descSb.ToString();
-            _result = sb.ToString();
+            return sb.ToString();
         }
     }
 }

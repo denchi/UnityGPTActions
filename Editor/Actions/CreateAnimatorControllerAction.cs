@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -17,10 +18,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Comma-separated list of states to create in the controller (optional)")]
         public string States { get; set; }
 
-        public override string Content =>
-            $"Created Animator Controller '{Highlight(AnimatorName)}' and assigned to '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var go))
@@ -51,8 +49,9 @@ namespace GPTUnity.Actions
             animator.runtimeAnimatorController = animatorController;
 
             AssetDatabase.Refresh();
-            Debug.Log($"Animator Controller '{AnimatorName}' created and assigned to '{ObjectName}'.");
 #endif
+            
+            return $"Animator Controller '{AnimatorName}' created and assigned to '{ObjectName}'.";
         }
     }
 }

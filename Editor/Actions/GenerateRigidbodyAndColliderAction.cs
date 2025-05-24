@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using GPTUnity.Helpers;
 using UnityEngine;
 
@@ -13,10 +14,7 @@ namespace GPTUnity.Actions
         [GPTParameter("Type of collider: BoxCollider, SphereCollider, etc.")]
         public string ColliderType { get; set; }
 
-        public override string Content =>
-            $"Added Rigidbody and '{Highlight(ColliderType)}' to '{Highlight(ObjectName)}'";
-
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var go))
             {
@@ -37,6 +35,8 @@ namespace GPTUnity.Actions
             {
                 go.AddComponent(type);
             }
+
+            return $"Added Rigidbody and '{Highlight(ColliderType)}' to '{Highlight(ObjectName)}'";
         }
     }
 }

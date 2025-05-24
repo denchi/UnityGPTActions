@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -15,11 +16,9 @@ namespace GPTUnity.Actions
         [GPTParameter("Version of the package to add, e.g. 3.0.6", required: true)]
         public string Version { get; set; }
 
-        public override string Content => $"Added package: {PackageName + "@" + Version}";
-        
         public override string Description => $"Added package: {Highlight(PackageName + "@" + Version)}";
 
-        public override void Execute()
+        public override async Task<string> Execute()
         {
             #if UNITY_EDITOR
             
@@ -51,8 +50,10 @@ namespace GPTUnity.Actions
             dependencies[PackageName] = Version;
             var newJson = jp.ToString(Formatting.Indented);
             File.WriteAllText(manifestPath, newJson);
-            
-            #endif
+
+            return $"Added package: {PackageName + "@" + Version}";
+
+#endif
         }
     }
 }
