@@ -52,15 +52,21 @@ namespace GPTUnity.Actions
                 ObjectName = ObjectName.Substring(ObjectName.LastIndexOf('/') + 1);
             }
             
-            var go = new GameObject(ObjectName);
+            if (!parentGameObject)
+            {
+                if (!string.IsNullOrEmpty(ParentObjectName) && !UnityAiHelpers.TryFindGameObject(ParentObjectName, out parentGameObject))
+                    throw new Exception($"Parent GameObject '{ParentObjectName}' not found.");
+            }
 
+            if (UnityAiHelpers.TryGetChildGameObject(parentGameObject, ObjectName, out _))
+            {
+                throw new Exception($"GameObject '{ObjectName}' already exists{(parentGameObject!= null ? " under " + parentGameObject.name : string.Empty)}.");
+            }
+                
+            var go = new GameObject(ObjectName);
             if (parentGameObject)
             {
                 go.transform.SetParent(parentGameObject.transform);
-            }
-            else if (UnityAiHelpers.TryFindGameObject(ParentObjectName, out var parent))
-            {
-                go.transform.SetParent(parent.transform);
             }
 
             var comps = Components?.Split(',');

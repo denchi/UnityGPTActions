@@ -11,9 +11,7 @@ namespace GPTUnity.Actions
         "Queries the currently opened Unity scene, providing detailed information about game objects, components, and hierarchy.")]
     public class QueryOpenedSceneAction : GPTActionBase
     {
-        private string _content;
-
-        [GPTParameter("The game object name to query information about")]
+        [GPTParameter("The game object name to query information about. Use if know the exact name of the GameObject. ")]
         public string TargetName { get; set; }
 
         [GPTParameter("The name of the type of the component to query information about")]
@@ -24,20 +22,19 @@ namespace GPTUnity.Actions
             var activeScene = SceneManager.GetActiveScene();
             var sb = new StringBuilder();
 
-            // Have a root game object
+            // Have a root game object - 
             if (!string.IsNullOrEmpty(TargetName))
             {
                 // Search for specific GameObject
                 if (UnityAiHelpers.TryFindGameObject(TargetName, out var target))
                 {
-                    sb.AppendLine(
-                        $"Found GameObject '{Highlight(TargetName)}' in scene '{Highlight(activeScene.name)}':");
+                    sb.AppendLine($"Found GameObject '{TargetName}' in scene '{activeScene.name}':");
                     DescribeGameObject(target, sb, "");
                 }
                 else
                 {
                     sb.AppendLine(
-                        $"GameObject '{Highlight(TargetName)}' not found in scene '{Highlight(activeScene.name)}'.");
+                        $"GameObject '{TargetName}' not found in scene '{activeScene.name}'.");
                 }
             }
             else if (!string.IsNullOrEmpty(TargetTypeName))
@@ -62,7 +59,7 @@ namespace GPTUnity.Actions
                         .Distinct()
                         .ToList();
 
-                    sb.AppendLine($"Found GameObjects in scene '{Highlight(activeScene.name)}':");
+                    sb.AppendLine($"Found GameObjects in scene '{activeScene.name}':");
                     foreach (var go in gameObjects)
                     {
                         DescribeGameObject(go, sb, "");
@@ -71,7 +68,7 @@ namespace GPTUnity.Actions
                 else
                 {
                     sb.AppendLine(
-                        $"GameObject '{Highlight(TargetName)}' not found in scene '{Highlight(activeScene.name)}'.");
+                        $"GameObject '{Highlight(TargetName)}' not found in scene '{activeScene.name}'.");
                 }
             }
             else
@@ -84,10 +81,10 @@ namespace GPTUnity.Actions
                 sb.AppendLine($"Root GameObjects: {Highlight(activeScene.rootCount.ToString())}");
                 sb.AppendLine("\nHierarchy:");
 
-                var rootObjects = activeScene.GetRootGameObjects();
-                foreach (var root in rootObjects)
+                var rootGameObjects = UnityAiHelpers.FindAllIncludingInactiveRootObjectInAllScenes();
+                foreach (var go in rootGameObjects)
                 {
-                    DescribeGameObject(root, sb, "");
+                    DescribeGameObject(go, sb, "");
                 }
             }
 
@@ -96,17 +93,25 @@ namespace GPTUnity.Actions
 
         private void DescribeGameObject(GameObject obj, StringBuilder sb, string indent)
         {
-            sb.AppendLine($"{indent}└─ {obj.name}");
-            indent += "  ";
+            if (!string.IsNullOrEmpty(indent))
+            {
+                indent = $"{indent}/{obj.name}";
+            }
+            else
+            {
+                indent = obj.name;
+            }
+                
+            sb.AppendLine(indent);
 
             // List components
             var components = obj.GetComponents<Component>();
             foreach (var component in components)
             {
                 if (component == null) continue;
-
-                sb.Append($"{indent}[Component] {component.GetType().Name}");
-
+            
+                sb.Append($"\t[Component] {component.GetType().Name}");
+            
                 // Special handling for common components
                 if (component is Transform transform)
                 {
@@ -121,7 +126,7 @@ namespace GPTUnity.Actions
                 {
                     sb.Append($" (Enabled: {collider.enabled}, Trigger: {collider.isTrigger})");
                 }
-
+            
                 sb.AppendLine();
             }
 

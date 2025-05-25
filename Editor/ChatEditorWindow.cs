@@ -523,8 +523,7 @@ public partial class ChatEditorWindow : EditorWindow
     {
         try
         {
-            action.Result = await action.Execute();
-            toolMessage.content = action.Result;
+            action.Result = toolMessage.content = await action.Execute();
                 
             AddMessageVisualElementWithData(
                 toolMessage, 
@@ -544,12 +543,17 @@ public partial class ChatEditorWindow : EditorWindow
         }
         catch (Exception ex)
         {
-            action.Result = ex.Message;
-            toolMessage.content = ex.Message;
+            Debug.LogException(ex);
+            
+            action.Result = toolMessage.content = $"<color=red>{ex.Message}</color>";
+            
+            // AddMessageVisualElementWithData(
+            //     toolMessage, 
+            //     action: new ShowErrorAction(action, ex));
             
             AddMessageVisualElementWithData(
                 toolMessage, 
-                action: new ShowErrorAction(action, ex));
+                action: action);
         }
 
         _toolCalls.MarkToolCallExecuted(toolCall);

@@ -69,6 +69,29 @@ namespace GPTUnity.Helpers
             }
         }
         
+        public static List<GameObject> FindAllIncludingInactiveRootObjectInAllScenes()
+        {
+            List<GameObject> gameObjects = new List<GameObject>();
+            
+            int sceneCount = SceneManager.sceneCount;
+
+            for (int i = 0; i < sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+
+                if (!scene.isLoaded)
+                    continue;
+
+                GameObject[] rootObjects = scene.GetRootGameObjects();
+                foreach (GameObject obj in rootObjects)
+                {
+                    gameObjects.Add(obj);
+                }
+            }
+
+            return gameObjects;
+        }
+        
         public static bool TryFindGameObject(string path, out GameObject gameObject)
         {
             if (string.IsNullOrEmpty(path))
@@ -188,6 +211,42 @@ namespace GPTUnity.Helpers
                     onReady?.Invoke();
                 }
             };
+        }
+
+        public static bool TryGetChildGameObject(GameObject parentGameObject, string objectName, out GameObject result)
+        {
+            if (!parentGameObject)
+            {
+                for (int i = 0, sceneCount = SceneManager.sceneCount; i < sceneCount; i++)
+                {
+                    Scene scene = SceneManager.GetSceneAt(i);
+
+                    if (!scene.isLoaded)
+                        continue;
+
+                    GameObject[] rootObjects = scene.GetRootGameObjects();
+                    foreach (var obj in rootObjects)
+                    {
+                        result = obj;
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0, childCount = parentGameObject.transform.childCount; i < childCount; i++)
+                {
+                    var child = parentGameObject.transform.GetChild(i);
+                    if (child.name == objectName)
+                    {
+                        result = child.gameObject;
+                        return true;
+                    }
+                }
+            }
+
+            result = null;
+            return false;
         }
     }
 }

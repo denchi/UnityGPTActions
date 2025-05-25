@@ -8,10 +8,9 @@ namespace GPTUnity.Settings
     {
         [SerializeField] private string apiKey = "";
 
-        [SerializeField] private Color colorHighlight = Color.cyan;
-        [SerializeField] private Color colorBackgroundUser = new Color(0.2f, 0.4f, 0.7f);
-        [SerializeField] private Color colorBackgroundAssistant = new Color(0.25f, 0.25f, 0.25f);
-        [SerializeField] private Color colorChatBackground = new Color(0.1f, 0.1f, 0.1f);
+        [SerializeField] private Color colorBackgroundUser = new Color(0.3098f, 0.3098f, 0.3098f, 1f);
+        [SerializeField] private Color colorBackgroundAssistant = new Color(0.251f, 0.251f, 0.251f, 1f);
+        [SerializeField] private Color colorChatBackground = new Color(0.1686f, 0.1686f, 0.1686f, 1f);
 
         public string ApiKey
         {
@@ -21,12 +20,6 @@ namespace GPTUnity.Settings
                 apiKey = value;
                 Save(true);
             }
-        }
-
-        public Color ColorHighlight
-        {
-            get => colorHighlight;
-            set => colorHighlight = value;
         }
 
         public Color ColorBackgroundUser

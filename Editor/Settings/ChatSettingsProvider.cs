@@ -22,7 +22,6 @@ namespace GPTUnity.Data
                     var newApiKey = EditorGUILayout.PasswordField("API Key", settings.ApiKey);
 
                     // Color fields
-                    var newColorHighlight = EditorGUILayout.ColorField("Highlight Color", settings.ColorHighlight);
                     var newColorBackgroundUser =
                         EditorGUILayout.ColorField("User Background Color", settings.ColorBackgroundUser);
                     var newColorBackgroundAssistant = EditorGUILayout.ColorField("Assistant Background Color",
@@ -33,7 +32,6 @@ namespace GPTUnity.Data
                     if (EditorGUI.EndChangeCheck())
                     {
                         settings.ApiKey = newApiKey;
-                        settings.ColorHighlight = newColorHighlight;
                         settings.ColorBackgroundUser = newColorBackgroundUser;
                         settings.ColorBackgroundAssistant = newColorBackgroundAssistant;
                         settings.ColorChatBackground = newColorChatBackground;
