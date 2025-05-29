@@ -99,7 +99,8 @@ public partial class ChatEditorWindow : EditorWindow
         
         //_messageHistory.Save();
         
-        _lastScrollOffset = _messagesScrollView.scrollOffset;
+        if (_messagesScrollView != null)
+            _lastScrollOffset = _messagesScrollView.scrollOffset;
     }
 
     #endregion
@@ -545,7 +546,7 @@ public partial class ChatEditorWindow : EditorWindow
         {
             Debug.LogException(ex);
             
-            action.Result = toolMessage.content = $"<color=red>{ex.Message}</color>";
+            action.Result = toolMessage.content = ex.FormatExceptionWithInner(null);
             
             // AddMessageVisualElementWithData(
             //     toolMessage, 
@@ -601,9 +602,9 @@ public partial class ChatEditorWindow : EditorWindow
         contentElement.style.SetAllBorder(0);
         contentElement.style.color = Color.white;
         
-        if (action is IGPTActionWithFiles fileAction)
+        if (action is IActionThatContainsCode contentAction)
         {
-            AddFileAction(message, fileAction, contentElement);
+            AddContentAction(message, contentAction, contentElement);
         }
         else if (action is IGPTActionWithButton buttonAction)
         {
@@ -780,9 +781,9 @@ public partial class ChatEditorWindow : EditorWindow
     
     #region Special Views
     
-    private void AddFileAction(GPTMessage message, IGPTActionWithFiles fileAction, VisualElement messageElement)
+    private void AddContentAction(GPTMessage message, IActionThatContainsCode actionWithContent, VisualElement messageElement)
     {
-        var fileContainer = AddGenericAction(message, fileAction, messageElement);
+        var fileContainer = AddGenericAction(message, actionWithContent, messageElement);
         
         var foldout = new Foldout { text = "Content Preview", value = false };
         foldout.style.SetAllPadding(0);
@@ -795,7 +796,7 @@ public partial class ChatEditorWindow : EditorWindow
         scrollView.style.marginBottom = 5;
         
         var contentPreview = new TextField { multiline = true };
-        contentPreview.value = fileAction.Content;
+        contentPreview.value = actionWithContent.Content;
         contentPreview.isReadOnly = true;
         foldout.Add(scrollView);
         scrollView.Add(contentPreview);

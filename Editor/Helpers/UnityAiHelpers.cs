@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace GPTUnity.Helpers
 {
@@ -123,12 +124,12 @@ namespace GPTUnity.Helpers
             
             gameObject = FindIncludingInactiveRootObjectInAllScenes(path);
             
-            if (!gameObject)
-            {
-                var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
-                throw new Exception($"Could not find game object at path: {path}. " +
-                                    $"Found: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
-            }
+            // if (!gameObject)
+            // {
+            //     var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
+            //     throw new Exception($"Could not find game object at path: {path}. " +
+            //                         $"Found: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
+            // }
             
             return gameObject;
         }
@@ -227,8 +228,11 @@ namespace GPTUnity.Helpers
                     GameObject[] rootObjects = scene.GetRootGameObjects();
                     foreach (var obj in rootObjects)
                     {
-                        result = obj;
-                        return true;
+                        if (obj.name == objectName)
+                        {
+                            result = obj;
+                            return true;
+                        }
                     }
                 }
             }
@@ -239,14 +243,43 @@ namespace GPTUnity.Helpers
                     var child = parentGameObject.transform.GetChild(i);
                     if (child.name == objectName)
                     {
-                        result = child.gameObject;
-                        return true;
+                        if (child.name == objectName)
+                        {
+                            result = child.gameObject;
+                            return true;
+                        }
                     }
                 }
             }
 
             result = null;
             return false;
+        }
+
+        public static bool TryGetObjectTypeByType(string typeName, out Type type) 
+        {
+#if UNITY_EDITOR
+            
+            // remove all but the type name from 
+            typeName = typeName.Split(new char[] { '.', ',' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ??
+                       typeName;
+            
+            // Search all loaded types that inherit from Component:
+            type = TypeCache
+                .GetTypesDerivedFrom<Object>()                  // gather all Component types
+                .FirstOrDefault(t => 
+                    string.Equals(t.Name, typeName, 
+                        StringComparison.OrdinalIgnoreCase)
+                );
+
+            return type != null;
+            
+#else
+            type = Type.GetType(typeName) ??
+                   Type.GetType("UnityEngine." + typeName) ??
+                   Type.GetType("UnityEngine." + typeName + ", UnityEngine");
+            return type != null;
+#endif
         }
     }
 }

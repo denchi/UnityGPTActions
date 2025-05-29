@@ -30,12 +30,13 @@ namespace GPTUnity.Actions
                 throw new Exception("Package name and version cannot be empty.");
             }
 
-            if (string.IsNullOrEmpty(Version))
-            {
-                throw new Exception("Package name and version cannot be empty.");
-            }
-
             string packageId = $"{PackageName}@{Version}";
+            
+            if (!string.IsNullOrEmpty(Version))
+            {
+                packageId = $"{packageId}@{Version}";
+            }
+            
             AddRequest request = Client.Add(packageId);
 
             // Wait for the request to complete

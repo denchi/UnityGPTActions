@@ -16,6 +16,15 @@ namespace GPTUnity.Actions
 
         [GPTParameter("The name of the type of the component to query information about")]
         public string TargetTypeName { get; set; }
+        
+        [GPTParameter("Should Include Transform Information")]
+        public bool IncludeTransform { get; set; }
+        
+        [GPTParameter("Should Include Children GameObjects")]
+        public bool IncludeChildren { get; set; }
+        
+        [GPTParameter("Should Include Components Information")]
+        public bool IncludeOtherComponents { get; set; }
 
         public override async Task<string> Execute()
         {
@@ -109,11 +118,21 @@ namespace GPTUnity.Actions
             foreach (var component in components)
             {
                 if (component == null) continue;
-            
+
+                // Only include Transform if requested
+                if (component is Transform)
+                {
+                    if (!IncludeTransform) continue;
+                }
+                else
+                {
+                    if (!IncludeOtherComponents) continue;
+                }
+
                 sb.Append($"\t[Component] {component.GetType().Name}");
-            
+
                 // Special handling for common components
-                if (component is Transform transform)
+                if (component is Transform transform && IncludeTransform)
                 {
                     sb.Append(
                         $" (Pos: {transform.position}, Rot: {transform.eulerAngles}, Scale: {transform.localScale})");
@@ -126,14 +145,17 @@ namespace GPTUnity.Actions
                 {
                     sb.Append($" (Enabled: {collider.enabled}, Trigger: {collider.isTrigger})");
                 }
-            
+
                 sb.AppendLine();
             }
 
-            // Recursively describe children
-            foreach (Transform child in obj.transform)
+            // Recursively describe children if requested
+            if (IncludeChildren)
             {
-                DescribeGameObject(child.gameObject, sb, indent);
+                foreach (Transform child in obj.transform)
+                {
+                    DescribeGameObject(child.gameObject, sb, indent);
+                }
             }
         }
     }

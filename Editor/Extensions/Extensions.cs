@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace GPTUnity.Helpers
@@ -30,6 +31,27 @@ namespace GPTUnity.Helpers
             }
 
             return path;
+        }
+        
+        public static string FormatExceptionWithInner(this Exception ex, string context = null)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            if (!string.IsNullOrEmpty(context))
+            {
+                sb.AppendLine(context);
+            }
+
+            int depth = 0;
+            while (ex != null)
+            {
+                string indent = new string('-', depth);
+                sb.AppendLine($"<color=red>{indent} {ex.Message}</color>");
+                ex = ex.InnerException;
+                depth++;
+            }
+
+            return sb.ToString();
         }
     }
 }

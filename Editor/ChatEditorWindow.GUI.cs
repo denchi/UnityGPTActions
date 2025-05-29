@@ -1,4 +1,5 @@
 using GPTUnity.Settings;
+using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -33,37 +34,41 @@ public partial class ChatEditorWindow
         _modelDropdown.value = _currentModel;
         _modelDropdown.RegisterValueChangedCallback(evt => _currentModel = evt.newValue);
 
-        // Add "Copy History" button
-        var copyHistoryButton = new Button(OnButtonCopyHistoryClicked) { text = "C" };
-        copyHistoryButton.style.width = copyHistoryButton.style.height = 18;
-        copyHistoryButton.tooltip = "New Chat";
+        var toolbar = new Toolbar();
 
-        // Add "Copy History" button
-        var pasteHistoryButton = new Button(OnButtonPasteHistoryClicked) { text = "P" };
-        copyHistoryButton.style.width = copyHistoryButton.style.height = 18;
-        copyHistoryButton.tooltip = "Paste Chat";
+        // Remove copy, paste, rebuild buttons and replace with 3-dot menu
+        toolbar.Add(new ToolbarSpacer { flex = true });
 
-        // Add "Copy History" button
-        var rebuildButton = new Button(CreateGUI) { text = "R" };
-        rebuildButton.style.width = rebuildButton.style.height = 18;
-        rebuildButton.tooltip = "Rebuild UI";
-
-        // Add reset button with "+" icon
+        // "+" (New Chat) button remains as-is, rightmost
         var resetIconButton = new Button(ResetMessagesVisualElements) { text = "" };
         resetIconButton.style.width = resetIconButton.style.height = 18;
         resetIconButton.style.backgroundImage = iconsHelpers.LoadUnityIcon("d_Toolbar Plus");
         resetIconButton.tooltip = "New Chat";
-
-        var toolbar = new Toolbar();
-
-        toolbar.Add(copyHistoryButton);
-        toolbar.Add(pasteHistoryButton);
-        toolbar.Add(rebuildButton);
-
-        toolbar.Add(new ToolbarSpacer { flex = true });
-
-        //toolbar.Add(_modelDropdown);
         toolbar.Add(resetIconButton);
+
+        // 3-dot menu as a label (not a button)
+        var menuLabel = new Label("\u22EE"); // Unicode vertical ellipsis
+        menuLabel.tooltip = "More Options";
+        menuLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+        menuLabel.style.fontSize = 14;
+        menuLabel.style.marginRight = 9;
+        menuLabel.style.marginLeft = 5;
+        menuLabel.style.alignSelf = Align.Center;
+        
+        //menuLabel.style.cursor = MouseCursor.Link;
+        menuLabel.RegisterCallback<MouseDownEvent>(evt =>
+        {
+            if (evt.button == 0)
+            {
+                var menu = new UnityEditor.GenericMenu();
+                menu.AddItem(new GUIContent("Copy Chat"), false, OnButtonCopyHistoryClicked);
+                menu.AddItem(new GUIContent("Paste Chat"), false, OnButtonPasteHistoryClicked);
+                menu.AddItem(new GUIContent("Rebuild UI"), false, CreateGUI);
+                menu.DropDown(menuLabel.worldBound);
+            }
+        });
+        toolbar.Add(menuLabel);
+
         root.Add(toolbar);
 
         // Messages area
