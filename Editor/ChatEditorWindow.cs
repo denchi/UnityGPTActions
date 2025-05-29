@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using GptActions.Editor.AssetIndexer;
 using GPTUnity.Actions;
+using GPTUnity.Actions.Interfaces;
+using GPTUnity.Api;
 using GPTUnity.Data;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
@@ -32,13 +34,15 @@ public partial class ChatEditorWindow : EditorWindow
     private VisualElement _bottomBar;
     private DropdownField _modelDropdown;
     private Dictionary<string, VisualElement> _elementsByMessage = new();
+    
     private GptTypesRegister _gptTypesRegister = new GptTypesRegister();
     private GptActionsFactory _gptActionsFactory = new GptActionsFactory();
-    private IconsHelpers iconsHelpers = new IconsHelpers();
+    private IconsHelpers _iconsHelpers = new IconsHelpers();
+    private IGPTServiceApi _api;
+    
     private bool _didForceStop = false;
-    private string _currentModel = "gpt-4.1";
+    private string _currentModel = "gpt-4.1-mini";
     private State _state;
-    private List<string> _models = new List<string> { "gpt-3.5-turbo", "gpt-4", "gpt-4o", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano" };
     
     #region Unity Editor Window
 
@@ -76,7 +80,8 @@ public partial class ChatEditorWindow : EditorWindow
                 Debug.Log($"Restored value for {field.Name} = {value}");
             }
         }
-        
+
+        _api = new OpenAIApiService(key: ChatSettings.instance.ApiKey);
         _gptActionsFactory.Init(_gptTypesRegister);
     }
 
@@ -376,34 +381,34 @@ public partial class ChatEditorWindow : EditorWindow
         
         SetState(State.Running);
         
-        var client = new HttpClient();
-        var url = "https://api.openai.com/v1/chat/completions";
-        var messages = _messages.ChatHistory;
-        var requestBody = new
-        {
-            model = _currentModel,
-            messages,
-            tools = _gptTypesRegister.Tools,
-            tool_choice = "auto",
-            // file_search = new {
-            //     file_ids =  new [] { OpenAIFileTracker.Instance.lastFileId }  // ✅ Use file ID returned above
-            // },
-            max_tokens = 8192
-        };
-        
-        var requestJson = JsonConvert.SerializeObject(requestBody);
-        
-        Debug.Log($"[SendMessagesAndProcessResponse] Sent: {requestJson}");
-        
-        var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ChatSettings.instance.ApiKey}");
+        // var client = new HttpClient();
+        // var url = "https://api.openai.com/v1/chat/completions";
+        // var messages = _messages.ChatHistory;
+        // var requestBody = new
+        // {
+        //     model = _currentModel,
+        //     messages,
+        //     tools = _gptTypesRegister.Tools,
+        //     tool_choice = "auto",
+        //     // file_search = new {
+        //     //     file_ids =  new [] { OpenAIFileTracker.Instance.lastFileId }  // ✅ Use file ID returned above
+        //     // },
+        //     max_tokens = 8192
+        // };
+        //
+        // var requestJson = JsonConvert.SerializeObject(requestBody);
+        //
+        // Debug.Log($"[SendMessagesAndProcessResponse] Sent: {requestJson}");
+        //
+        // var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+        // client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ChatSettings.instance.ApiKey}");
 
         try
         {
             _requestSent = true;
             _requestReceived = false;
             
-            var response = await client.PostAsync(url, content);
+            var responseData = await _api.Chat(_messages.ChatHistory, _currentModel, _gptTypesRegister.Tools);
             
             _requestReceived = true;
             
@@ -412,23 +417,6 @@ public partial class ChatEditorWindow : EditorWindow
                 CancelWithMessage("[SendMessagesAndProcessResponse] Cancelled By User!");
                 return;
             }
-            
-            var responseJson = await response.Content.ReadAsStringAsync();
-            
-            if (_didForceStop)
-            {
-                CancelWithMessage("[SendMessagesAndProcessResponse] Cancelled By User!");
-                return;
-            }
-            
-            Debug.Log($"[SendMessagesAndProcessResponse] Response: {responseJson}");
-            
-            if (responseJson.Contains("\"error\""))
-            {
-                throw new Exception(responseJson);
-            }
-            
-            var responseData = JsonConvert.DeserializeObject<GPTFunctionResponse>(responseJson);
             
             var shouldContinue = false;
             var choice = responseData?.choices?.FirstOrDefault();
@@ -524,13 +512,18 @@ public partial class ChatEditorWindow : EditorWindow
     {
         try
         {
+            if (action is IGPTActionWithFiles)
+            {
+                
+            }
+            
             action.Result = toolMessage.content = await action.Execute();
                 
             AddMessageVisualElementWithData(
                 toolMessage, 
                 action: action);
                                 
-            if (action is IActionThatRequiresReload)
+            if (action is IGPTActionThatRequiresReload)
             {
                 _toolCalls.MarkToolCallExecuted(toolCall);
 
@@ -544,7 +537,7 @@ public partial class ChatEditorWindow : EditorWindow
         }
         catch (Exception ex)
         {
-            Debug.LogException(ex);
+            Debug.LogWarning(ex);
             
             action.Result = toolMessage.content = ex.FormatExceptionWithInner(null);
             
@@ -595,20 +588,20 @@ public partial class ChatEditorWindow : EditorWindow
         
         messageElement.style.SetAllPadding(10);
 
-        var icon = iconsHelpers.GetImage(message.role);
+        var icon = _iconsHelpers.GetImage(message.role);
         var contentElement = new VisualElement();
         contentElement.style.flexGrow = 1;
         contentElement.style.SetAllPadding(0);
         contentElement.style.SetAllBorder(0);
         contentElement.style.color = Color.white;
         
-        if (action is IActionThatContainsCode contentAction)
+        if (action is IGPTActionThatContainsCode)
         {
-            AddContentAction(message, contentAction, contentElement);
+            AddContentAction(message, action, contentElement);
         }
-        else if (action is IGPTActionWithButton buttonAction)
+        else if (action is IGPTActionWithButton)
         {
-            AddButtonAction(message, buttonAction, contentElement);
+            AddButtonAction(message, action, contentElement);
         }
         else if (action is not null)
         {
@@ -781,9 +774,9 @@ public partial class ChatEditorWindow : EditorWindow
     
     #region Special Views
     
-    private void AddContentAction(GPTMessage message, IActionThatContainsCode actionWithContent, VisualElement messageElement)
+    private void AddContentAction(GPTMessage message, IGPTAction action, VisualElement messageElement)
     {
-        var fileContainer = AddGenericAction(message, actionWithContent, messageElement);
+        var fileContainer = AddGenericAction(message, action, messageElement);
         
         var foldout = new Foldout { text = "Content Preview", value = false };
         foldout.style.SetAllPadding(0);
@@ -796,7 +789,7 @@ public partial class ChatEditorWindow : EditorWindow
         scrollView.style.marginBottom = 5;
         
         var contentPreview = new TextField { multiline = true };
-        contentPreview.value = actionWithContent.Content;
+        contentPreview.value = (action is IGPTActionThatContainsCode actionContent) ? actionContent.Content : "";
         contentPreview.isReadOnly = true;
         foldout.Add(scrollView);
         scrollView.Add(contentPreview);
@@ -804,10 +797,14 @@ public partial class ChatEditorWindow : EditorWindow
         fileContainer.Add(foldout);
     }
     
-    private void AddButtonAction(GPTMessage message, IGPTActionWithButton buttonAction, VisualElement messageElement)
+    private void AddButtonAction(GPTMessage message, IGPTAction action, VisualElement messageElement)
     {
         // Buttons container
-        var buttonsContainer = AddGenericAction(message, buttonAction, messageElement);
+        var buttonsContainer = AddGenericAction(message, action, messageElement);
+        messageElement.Add(buttonsContainer);
+
+        if (action is not IGPTActionWithButton buttonAction)
+            return;
         
         // Original location button
         var createAtOriginalButton = new Button(buttonAction.OnClick)
@@ -816,7 +813,6 @@ public partial class ChatEditorWindow : EditorWindow
         };
 
         buttonsContainer.Add(createAtOriginalButton);
-        messageElement.Add(buttonsContainer);
     }
 
     private VisualElement AddGenericAction(GPTMessage message, IGPTAction action, VisualElement contentElement)

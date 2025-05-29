@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using Newtonsoft.Json;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -12,7 +13,7 @@ using UnityEditor.PackageManager.Requests;
 namespace GPTUnity.Actions
 {
     [GPTAction("Adds a Unity package to manifest.json.")]
-    public class AddPackageAction : GPTActionBase, IActionThatRequiresReload
+    public class AddPackageAction : GPTActionBase, IGPTActionThatRequiresReload
     {
         [GPTParameter("Name of the package to add, e.g. com.unity.textmeshpro", required: true)]
         public string PackageName { get; set; }

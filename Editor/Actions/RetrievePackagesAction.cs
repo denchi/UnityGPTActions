@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using UnityEditor.PackageManager.UI;
 using UnityEngine;
 
 namespace GPTUnity.Actions
 {
     [GPTAction("Retrieves all installed Unity packages from manifest.json.")]
-    public class RetrievePackagesAction : GPTActionBase
+    public class RetrieveInstalledPackagesAction : GPTActionBase
     {
         public override string Description => _description;
 

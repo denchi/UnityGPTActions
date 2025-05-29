@@ -2,13 +2,14 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using Newtonsoft.Json;
 using UnityEngine;
 
 namespace GPTUnity.Actions
 {
     [GPTAction("Removes a Unity package from manifest.json.")]
-    public class RemovePackageAction : GPTActionBase, IActionThatRequiresReload
+    public class RemovePackageAction : GPTActionBase, IGPTActionThatRequiresReload
     {
         [GPTParameter("Name of the package to remove, e.g. com.unity.textmeshpro")]
         public string PackageName { get; set; }

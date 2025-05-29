@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -11,7 +12,7 @@ using UnityEngine.Audio;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates and saves a UnityEngine.Object asset of the specified type at the given path.")]
-    public class CreateUnityAssetAction : GPTActionBase, IActionThatRequiresReload
+    public class CreateUnityAssetAction : GPTActionBase, IGPTActionThatRequiresReload
     {
         [GPTParameter("The full type name of the UnityEngine.Object to create (e.g., 'UnityEngine.Material')")]
         public string ObjectType { get; set; }

@@ -28,7 +28,7 @@ namespace GPTUnity.Actions
                 throw new Exception($"Component type '{ComponentTypeName}' not found.");
             
             if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var go))
-                throw new Exception($"GAmeObject '{ObjectName}' not found.");
+                throw new Exception($"aAmeObject '{ObjectName}' not found.");
 
             var comp = go.GetComponent(type);
             if (!comp)

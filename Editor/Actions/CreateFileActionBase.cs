@@ -1,10 +1,11 @@
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using UnityEditor;
 using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    public abstract class CreateFileActionBase : GPTActionBase, IGPTActionWithFiles, IActionThatRequiresReload
+    public abstract class CreateFileActionBase : GPTActionBase, IGPTActionWithFiles, IGPTActionThatRequiresReload
     {
         [GPTParameter("Output file name without extension")]
         public string FileName { get; set; }

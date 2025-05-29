@@ -1,6 +1,7 @@
 namespace GPTUnity.Actions
 {
-    [GPTAction(@"Generates an SVG image file. Requires Vector Graphics 2.0.0+ installed")]
+    [GPTAction(@"Generates an SVG image file")]
+    [GPTRequiresPackage("com.unity.vectorgraphics")]
     public class GenerateSvgImageAction : CreateFileActionBase
     {
         [GPTParameter("The contents of the SVG file")]
