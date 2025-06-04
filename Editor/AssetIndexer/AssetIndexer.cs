@@ -21,8 +21,8 @@ namespace GptActions.Editor.AssetIndexer
         
         static AssetIndexer()
         {
-            //EditorApplication.update += Update;
-            LoadOrCreateDatabase();
+            // EditorApplication.update += Update;
+            // LoadOrCreateDatabase();
         }
 
         private static void Update()

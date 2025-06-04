@@ -1,6 +1,9 @@
 using System.Linq;
+using System.Reflection;
+using GPTUnity.Api;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -13,6 +16,8 @@ public partial class ChatEditorWindow
     private void CreateGUI()
     {
         Debug.Log("===CreateGUI===");
+        
+        InitDerivedFields();
 
         rootVisualElement.Clear();
 
@@ -32,6 +37,7 @@ public partial class ChatEditorWindow
         topBar.Add(flexibleSpace);
 
         var toolbar = new Toolbar();
+        
 
         // Remove copy, paste, rebuild buttons and replace with 3-dot menu
         toolbar.Add(new ToolbarSpacer { flex = true });
@@ -142,11 +148,21 @@ public partial class ChatEditorWindow
         // Input area
         _bottomBar = new VisualElement();
         _bottomBar.style.flexDirection = FlexDirection.Row;
-        _bottomBar.style.minHeight = 20;
-        _bottomBar.style.maxHeight = 200;
+        _bottomBar.style.minHeight = _bottomBar.style.maxHeight = 84+2*2+2*2;
         _bottomBar.style.width = Length.Percent(100);
         _bottomBar.style.marginBottom = 10;
         _bottomBar.style.marginTop = 10;
+        _bottomBar.style.SetAllPadding(2);
+
+        // Add blue outline
+        _bottomBar.style.borderTopWidth = 
+            _bottomBar.style.borderBottomWidth = 
+                _bottomBar.style.borderLeftWidth = 
+                    _bottomBar.style.borderRightWidth = 2;
+        _bottomBar.style.borderTopColor = 
+            _bottomBar.style.borderBottomColor = 
+                _bottomBar.style.borderLeftColor = 
+                    _bottomBar.style.borderRightColor = new Color(0.251f, 0.553f, 1.0f, 1.0f); // #408DFF in RGBA
 
         _inputField = new TextField();
         _inputField.multiline = true;
@@ -169,6 +185,7 @@ public partial class ChatEditorWindow
         _bottomBar.Add(_inputField);
         
         _modelDropdown = new DropdownField("");
+        _modelDropdown.style.height = 20;
         _modelDropdown.choices = _api.Models.ToList();
         _modelDropdown.value = _currentModel;
         _modelDropdown.RegisterValueChangedCallback(OnModelDropDownValueChanged);
@@ -214,6 +231,38 @@ public partial class ChatEditorWindow
         _messagesScrollView.scrollOffset = _lastScrollOffset;
 
         OnGUICreated();
+    }
+
+    private void InitDerivedFields()
+    {
+        if (_requestSent && _requestReceived)
+        {
+            _requestSent = false;
+            _requestReceived = false;
+            _requiresSendToServer = false;
+        }
+
+        var fields = GetType()
+            .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(f => f.GetCustomAttributes(typeof(SerializeGptEditorFieldAttribute), true).Any());
+        
+        foreach (var field in fields)
+        {
+            // Read field value from Editorprefs
+            var value = EditorPrefs.GetString(field.Name, string.Empty);
+            if (!string.IsNullOrEmpty(value))
+            {
+                // Deserialize the value and set it to the field
+                var deserializedValue = JsonConvert.DeserializeObject(value, field.FieldType);
+                field.SetValue(this, deserializedValue);
+                
+                Debug.Log($"Restored value for {field.Name} = {value}");
+            }
+        }
+
+        _api = new LegacyOpenAIApiService(key: ChatSettings.instance.ApiKey);
+        _imagesApi = new OpenAIImageServiceApi(key: ChatSettings.instance.ApiKey);
+        _gptActionsFactory.Init(_gptTypesRegister);
     }
 
     #endregion

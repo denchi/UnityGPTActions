@@ -44,10 +44,10 @@ namespace GPTUnity.Actions
             var namespaceMatch = Regex.Match(sourceCode, @"namespace\s+([^\s{]+)");
             string namespaceName = namespaceMatch.Success ? namespaceMatch.Groups[1].Value : "No namespace";
 
-            // Extract classes
-            var classMatches = Regex.Matches(sourceCode, @"(?:public|private|protected|internal)?\s*class\s+(\w+)");
+            // Extract classes and their parents
+            var classMatches = Regex.Matches(sourceCode, @"(?:public|private|protected|internal)?\s*class\s+(\w+)(?:\s*:\s*([^{\s]+))?");
             
-            // Extra ct methods
+            // Extract methods
             var methodMatches = Regex.Matches(sourceCode, @"(?:public|private|protected|internal)?\s+(?:static\s+)?(?:<[^>]+>\s+)?[\w<>[\]]+\s+(\w+)\s*\([^)]*\)");
 
             // Build detailed content
@@ -56,7 +56,9 @@ namespace GPTUnity.Actions
             sb.AppendLine("\nClasses:");
             foreach (Match classMatch in classMatches)
             {
-                sb.AppendLine($"- {classMatch.Groups[1].Value}");
+                string className = classMatch.Groups[1].Value;
+                string parentClass = classMatch.Groups[2].Success ? classMatch.Groups[2].Value : "None";
+                sb.AppendLine($"- {className} (Parent: {parentClass})");
             }
 
             sb.AppendLine("\nMethods:");

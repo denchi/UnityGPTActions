@@ -54,35 +54,6 @@ public partial class ChatEditorWindow : EditorWindow
     private void OnEnable()
     {
         Debug.Log("===OnEnable===");
-
-        if (_requestSent && _requestReceived)
-        {
-            _requestSent = false;
-            _requestReceived = false;
-            _requiresSendToServer = false;
-        }
-
-        var fields = GetType()
-            .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .Where(f => f.GetCustomAttributes(typeof(SerializeGptEditorFieldAttribute), true).Any());
-        
-        foreach (var field in fields)
-        {
-            // Read field value from Editorprefs
-            var value = EditorPrefs.GetString(field.Name, string.Empty);
-            if (!string.IsNullOrEmpty(value))
-            {
-                // Deserialize the value and set it to the field
-                var deserializedValue = JsonConvert.DeserializeObject(value, field.FieldType);
-                field.SetValue(this, deserializedValue);
-                
-                Debug.Log($"Restored value for {field.Name} = {value}");
-            }
-        }
-
-        _api = new LegacyOpenAIApiService(key: ChatSettings.instance.ApiKey);
-        _imagesApi = new OpenAIImageServiceApi(key: ChatSettings.instance.ApiKey);
-        _gptActionsFactory.Init(_gptTypesRegister);
     }
 
     private void OnDisable()

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using GPTUnity.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Sirenix.Utilities;
 using UnityEngine;
 
 namespace GPTUnity.Api
@@ -115,7 +114,7 @@ namespace GPTUnity.Api
         public async Task<T> Get<T>(IReadOnlyCollection<GPTMessage> messages, string model, object schema, object[] tools = null)
         {
             var result = await Chat(messages, model, tools, schema);
-            if (result.choices.IsNullOrEmpty())
+            if (result.choices == null || result.choices.Count == 0)
             {
                 throw new Exception("No choices returned from the model.");
             }

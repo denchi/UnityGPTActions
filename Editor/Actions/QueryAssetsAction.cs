@@ -1,6 +1,6 @@
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +8,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Queries Unity assets by path, type, and/or name, providing detailed information about matching assets.")]
-    public class QueryAssetsAction : GPTAssistantAction
+    public class QueryAssetsAction : GPTAssistantAction, IGPTActionThatContainsCode
     {
         [GPTParameter("The path to search for assets (optional)")]
         public string Path { get; set; }
@@ -19,22 +19,15 @@ namespace GPTUnity.Actions
         [GPTParameter("The name of the asset to search for (optional)")]
         public string AssetName { get; set; }
 
+        public string Content => GetFilter();
+
         public override async Task<string> Execute()
         {
             var sb = new StringBuilder();
             var searchPath = string.IsNullOrEmpty(Path) ? "Assets" : Path;
 
-            var filter = "";
-            if (!string.IsNullOrEmpty(AssetName))
-            {
-                filter = AssetName;
-            }
-            
-            if (!string.IsNullOrEmpty(AssetType))
-            {
-                filter = $"t: {AssetType} {filter}";
-            }
-            
+            var filter = GetFilter();
+
             // Find all matching assets
             var guids = AssetDatabase.FindAssets(filter, new[] { searchPath });
             if (guids.Length == 0)
@@ -85,6 +78,22 @@ namespace GPTUnity.Actions
             }
 
             return sb.ToString(); 
+        }
+
+        private string GetFilter()
+        {
+            var filter = "";
+            if (!string.IsNullOrEmpty(AssetName))
+            {
+                filter = AssetName;
+            }
+            
+            if (!string.IsNullOrEmpty(AssetType))
+            {
+                filter = $"t: {AssetType} {filter}";
+            }
+
+            return filter;
         }
     }
 }
