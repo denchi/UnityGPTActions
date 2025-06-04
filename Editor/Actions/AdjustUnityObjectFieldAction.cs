@@ -9,7 +9,7 @@ using UnityEditor;
 namespace GPTUnity.Actions
 {
     [GPTAction("Adjusts a serialized field or property on any UnityEngine.Object asset.")]
-    public class AdjustUnityObjectFieldAction : GPTActionBase
+    public class AdjustUnityObjectFieldAction : GPTAssistantAction
     {
         [GPTParameter("The asset path (e.g., 'Assets/MyAsset.asset'")]
         public string ObjectIdentifier { get; set; }

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Applies an existing material to a GameObject.")]
-    public class ApplyMaterialAction : GPTActionBase
+    public class ApplyMaterialAction : GPTAssistantAction
     {
         [GPTParameter("Name of the GameObject")]
         public string ObjectName { get; set; }

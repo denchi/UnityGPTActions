@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates a new tag.")]
-    public class CreateTagAction : GPTActionBase
+    public class CreateTagAction : GPTAssistantAction
     {
         [GPTParameter("Name of the new tag")] 
         public string TagName { get; set; }

@@ -10,7 +10,7 @@ using UnityEditor;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates a new ScriptableObject asset of the specified type and saves it at the given path.")]
-    public class CreateScriptableObjectAction : GPTActionBase, IGPTActionThatRequiresReload
+    public class CreateScriptableObjectAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
         [GPTParameter("The full type name of the ScriptableObject to create (e.g., 'MyNamespace.MySOType')")]
         public string ScriptableObjectType { get; set; }

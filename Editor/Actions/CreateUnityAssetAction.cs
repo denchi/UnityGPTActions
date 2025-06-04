@@ -12,7 +12,7 @@ using UnityEngine.Audio;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates and saves a UnityEngine.Object asset of the specified type at the given path.")]
-    public class CreateUnityAssetAction : GPTActionBase, IGPTActionThatRequiresReload
+    public class CreateUnityAssetAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
         [GPTParameter("The full type name of the UnityEngine.Object to create (e.g., 'UnityEngine.Material')")]
         public string ObjectType { get; set; }

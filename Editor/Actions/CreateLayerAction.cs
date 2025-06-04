@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates a new layer.")]
-    public class CreateLayerAction : GPTActionBase
+    public class CreateLayerAction : GPTAssistantAction
     {
         [GPTParameter("Name of the new layer")]
         public string LayerName { get; set; }

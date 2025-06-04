@@ -10,7 +10,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Retrieves all installed Unity packages from manifest.json.")]
-    public class RetrieveInstalledPackagesAction : GPTActionBase
+    public class RetrieveInstalledPackagesAction : GPTAssistantAction
     {
         public override string Description => _description;
 

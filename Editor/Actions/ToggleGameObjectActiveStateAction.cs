@@ -5,7 +5,7 @@ using GPTUnity.Helpers;
 namespace GPTUnity.Actions
 {
     [GPTAction("Toggles a GameObject's active state on/off.")]
-    public class ToggleGameObjectActiveStateAction : GPTActionBase
+    public class ToggleGameObjectActiveStateAction : GPTAssistantAction
     {
         [GPTParameter("GameObject name")] public string ObjectName { get; set; }
 

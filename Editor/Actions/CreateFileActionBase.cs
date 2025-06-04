@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    public abstract class CreateFileActionBase : GPTActionBase, IGPTActionWithFiles, IGPTActionThatRequiresReload
+    public abstract class CreateFileActionBase : GPTAssistantAction, IGPTActionWithFiles, IGPTActionThatRequiresReload
     {
         [GPTParameter("Output file name without extension")]
         public string FileName { get; set; }

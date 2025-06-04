@@ -7,7 +7,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates a new GameObject with one or more predefined components.")]
-    public class CreateGameObjectAction : GPTActionBase
+    public class CreateGameObjectAction : GPTAssistantAction
     {
         [GPTParameter("Name of the new GameObject")]
         public string ObjectName { get; set; }

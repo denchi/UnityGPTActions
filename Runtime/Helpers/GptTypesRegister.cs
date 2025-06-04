@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using GPTUnity.Actions.Interfaces;
+using UnityEngine;
 
 namespace GPTUnity.Helpers
 {
@@ -51,21 +52,42 @@ namespace GPTUnity.Helpers
         private List<object> _functions;
         private object[] _tools;
         private object tools;
+        private Type _gptActionType;
+        
+        public GptTypesRegister(Type rootType)
+        {
+            _gptActionType = rootType;
+            
+            CollectGptActions();
+            CreateFunctions();
+        }
 
         private void CollectGptActions()
         {
-            var actionTypes = Assembly
-                .GetExecutingAssembly()
-                .GetTypes()
-                .Where(t =>
-                    typeof(IGPTAction).IsAssignableFrom(t)
-                    && !t.IsAbstract
-                    && CustomAttributeExtensions.GetCustomAttribute<GPTActionAttribute>((MemberInfo)t) != null);
+            var assemblies = new List<Assembly>
+            {
+                //Assembly.GetExecutingAssembly(), // this would be package assembly
+                Assembly.GetAssembly(_gptActionType)
+            };
 
             _actions = new Dictionary<string, Type>();
-            foreach (var actionType in actionTypes)
+
+            foreach (var assembly in assemblies)
             {
-                _actions[actionType.Name] = actionType;
+                var types = assembly
+                    .GetTypes();
+            
+                var assignableTypes = types
+                    .Where(t => _gptActionType.IsAssignableFrom(t));
+            
+                var actionTypes = assignableTypes
+                    .Where(t =>
+                        !t.IsAbstract && CustomAttributeExtensions.GetCustomAttribute<GPTActionAttribute>((MemberInfo)t) != null);
+                
+                foreach (var actionType in actionTypes)
+                {
+                    _actions[actionType.Name] = actionType;
+                }
             }
         }
 
@@ -106,6 +128,19 @@ namespace GPTUnity.Helpers
                 var attribute = property.GetCustomAttribute<GPTParameterAttribute>();
                 if (attribute == null)
                     continue;
+                
+                if (property.PropertyType.IsEnum)
+                {
+                    // If the property is an enum, we can use its names as the enum values
+                    var enumValues = Enum.GetNames(property.PropertyType);
+                    parameters[property.Name] = new
+                    {
+                        type = "string",
+                        @enum = enumValues,
+                        description = attribute.Description
+                    };
+                    continue;
+                }
 
                 parameters[property.Name] = new
                 {

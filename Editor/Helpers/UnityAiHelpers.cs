@@ -34,6 +34,8 @@ namespace GPTUnity.Helpers
         
         public static IDictionary<GameObject, string> FindAllIncludingInactiveRootObjectInAllScenes(string name)
         {
+            name = name.ToLower();
+            
             IDictionary<GameObject, string> gameObjects = new Dictionary<GameObject, string>();
             
             int sceneCount = SceneManager.sceneCount;
@@ -54,17 +56,17 @@ namespace GPTUnity.Helpers
 
             return gameObjects;
 
-            void ParseObject(GameObject root, string rootPath)
+            void ParseObject(GameObject temp, string parentPath)
             {
-                var newPath = rootPath + "/" + root.name;
-                if (root.name == name)
+                var newPath = parentPath + "/" + temp.name;
+                if (temp.name.ToLower().Contains(name))
                 {
-                    gameObjects.Add(root, newPath);
+                    gameObjects.Add(temp, newPath);
                 }
                 
-                for (var i = 0; i < root.transform.childCount; i++)
+                for (var i = 0; i < temp.transform.childCount; i++)
                 {
-                    var childTrs = root.transform.GetChild(i);
+                    var childTrs = temp.transform.GetChild(i);
                     ParseObject(childTrs.gameObject, newPath);
                 }
             }
@@ -124,12 +126,12 @@ namespace GPTUnity.Helpers
             
             gameObject = FindIncludingInactiveRootObjectInAllScenes(path);
             
-            // if (!gameObject)
-            // {
-            //     var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
-            //     throw new Exception($"Could not find game object at path: {path}. " +
-            //                         $"Found: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
-            // }
+            if (!gameObject)
+            {
+                var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
+                throw new Exception($"Could not find game object: {path}. " +
+                                    $"However found similar objects: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
+            }
             
             return gameObject;
         }

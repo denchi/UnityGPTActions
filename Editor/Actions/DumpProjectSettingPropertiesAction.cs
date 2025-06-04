@@ -6,7 +6,7 @@ using UnityEditor;
 namespace GPTUnity.Actions
 {
     [GPTAction("Dumps all serialized properties from a Project Setting asset.")]
-    public class DumpProjectSettingPropertiesAction : GPTActionBase
+    public class DumpProjectSettingPropertiesAction : GPTAssistantAction
     {
         [GPTParameter("Settings asset path, e.g. 'ProjectSettings/PlayerSettings.asset'")]
         public string AssetPath { get; set; }

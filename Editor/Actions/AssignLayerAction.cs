@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Assigns a layer to a GameObject.")]
-    public class AssignLayerAction : GPTActionBase
+    public class AssignLayerAction : GPTAssistantAction
     {
         [GPTParameter("Name of the GameObject")]
         public string ObjectName { get; set; }

@@ -8,7 +8,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Queries Unity assets by path, type, and/or name, providing detailed information about matching assets.")]
-    public class QueryAssetsAction : GPTActionBase
+    public class QueryAssetsAction : GPTAssistantAction
     {
         [GPTParameter("The path to search for assets (optional)")]
         public string Path { get; set; }

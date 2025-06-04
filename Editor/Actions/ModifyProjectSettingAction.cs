@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace GPTUnity.Actions
 {
     [GPTAction("Modifies a value in a Project Setting asset.")]
-    public class ModifyProjectSettingAction : GPTActionBase
+    public class ModifyProjectSettingAction : GPTAssistantAction
     {
         [GPTParameter("Settings asset name, e.g. 'ProjectSettings/PlayerSettings.asset'")]
         public string AssetPath { get; set; }

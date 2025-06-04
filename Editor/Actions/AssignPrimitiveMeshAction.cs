@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction(@"Assigns a primitive mesh to a GameObject's MeshFilter using built-in Unity resources")]
-    public class AssignPrimitiveMeshAction : GPTActionBase
+    public class AssignPrimitiveMeshAction : GPTAssistantAction
     {
         private string description;
 

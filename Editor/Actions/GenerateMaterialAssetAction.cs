@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using GPTUnity.Helpers;
 using UnityEditor;
 using UnityEngine;
@@ -9,7 +10,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction(@"Generates a material asset file.")]
-    public class GenerateMaterialAssetAction : GPTActionBase
+    public class GenerateMaterialAssetAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
         [GPTParameter("Output file name without extension")] 
         public string FileName { get; set; }
@@ -30,22 +31,6 @@ namespace GPTUnity.Actions
         public string ShaderParams { get; set; }
 
         public override string Description => $"Created material {Highlight(FileName)}";
-
-        // public static object ShaderParamsSchema() => new
-        // {
-        //     type = "array",
-        //     description = "Shader params like _color, _mainTex, etc...",
-        //     items = new
-        //     {
-        //         type = "object",
-        //         properties = new
-        //         {
-        //             key = new { type = "string", description = "Shader property key" },
-        //             value = new { type = "string", description = "Shader property value" },
-        //             type = new { type = "string", description = "Shader property type (float, color, vector, texture, int)" }
-        //         }
-        //     }
-        // };
 
         public override async Task<string> Execute()
         {
@@ -84,7 +69,7 @@ namespace GPTUnity.Actions
             }
             
             AssetDatabase.CreateAsset(material, matPath);
-            AssetDatabase.Refresh();
+            AssetDatabase.SaveAssets();
             
             return $"Created new material '{material.name} at {matPath}'.";
 #endif

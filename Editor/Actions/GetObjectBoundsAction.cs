@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Get The Bounds of an Object")]
-    public class GetObjectBoundsAction : GPTActionBase
+    public class GetObjectBoundsAction : GPTAssistantAction
     {
         [GPTParameter("Name of the GameObject")]
         public string ObjectName { get; set; }

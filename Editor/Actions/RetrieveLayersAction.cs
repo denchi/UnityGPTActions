@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 namespace GPTUnity.Actions
 {
     [GPTAction("Retrieves all layers.")]
-    public class RetrieveLayersAction : GPTActionBase
+    public class RetrieveLayersAction : GPTAssistantAction
     {
         public override async Task<string> Execute()
         {

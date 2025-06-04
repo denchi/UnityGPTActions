@@ -7,6 +7,19 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
+    public abstract class GPTAssistantAction : GPTActionBase
+    {
+        public static string Highlight(string value)
+        {
+            return $"<color=#408DFF>{value}</color>";
+        }
+
+        protected static string Error(string value)
+        {
+            return $"<color=red>{value}</color>";
+        }
+    }
+    
     public abstract class GPTActionBase : IGPTAction
     {
         public virtual string Result { get; set; }
@@ -63,18 +76,6 @@ namespace GPTUnity.Actions
                 Debug.LogWarning(
                     $"Property {property.Name} could not be set to {argumentValue}. Unsupported type or invalid argument value.");
             }
-        }
-
-        //
-
-        public static string Highlight(string value)
-        {
-            return $"<color=#408DFF>{value}</color>";
-        }
-
-        protected static string Error(string value)
-        {
-            return $"<color=red>{value}</color>";
         }
     }
 }

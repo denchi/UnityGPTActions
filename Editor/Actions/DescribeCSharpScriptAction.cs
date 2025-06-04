@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace GPTUnity.Actions
 {
     [GPTAction("Describes the contents of a C# script file.")]
-    public class DescribeCSharpScriptAction : GPTActionBase
+    public class DescribeCSharpScriptAction : GPTAssistantAction
     {
         [GPTParameter("Path to the C# script file")]
         public string Input { get; set; }

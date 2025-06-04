@@ -11,10 +11,12 @@ namespace GPTUnity.Helpers
     public class GptActionsFactory
     {
         private GptTypesRegister typesRegister;
+        private Action<IGPTAction> actionCreatedCallback;
 
-        public void Init(GptTypesRegister typesRegister)
+        public void Init(GptTypesRegister typesRegister, Action<IGPTAction> actionCreatedCallback = null)
         {
             this.typesRegister = typesRegister;
+            this.actionCreatedCallback = actionCreatedCallback;
         }
 
         public IGPTAction CreateActionFromFunctionCall(GPTFunctionCall functionCall)
@@ -41,6 +43,11 @@ namespace GPTUnity.Helpers
             }
 
             actionInstance.InitializeParameters(arguments);
+            
+            if (actionCreatedCallback != null)
+            {
+                actionCreatedCallback(actionInstance);
+            }
 
             return actionInstance;
         }

@@ -156,11 +156,20 @@ public partial class ChatEditorWindow
         _inputField.style.flexShrink = 1; // Allows shrinking
         _inputField.style.minWidth = 0; // Prevents overflow
         _inputField.style.marginRight = 0; // Optional: space between input and buttons
+
+        // Make the input field more like a textarea
+        _inputField.style.minHeight = 60;
+        _inputField.style.maxHeight = 120;
+        _inputField.style.height = 80;
+        _inputField.style.unityTextAlign = TextAnchor.UpperLeft;
+        _inputField.style.overflow = Overflow.Visible;
+        //_inputField.style.resize = new StyleEnum<Resize>(Resize.Vertical);
+
         _inputField.RegisterCallback<KeyDownEvent>(OnKeyDown);
         _bottomBar.Add(_inputField);
         
         _modelDropdown = new DropdownField("");
-        _modelDropdown.choices = _api.GetModels().ToList();
+        _modelDropdown.choices = _api.Models.ToList();
         _modelDropdown.value = _currentModel;
         _modelDropdown.RegisterValueChangedCallback(OnModelDropDownValueChanged);
         _bottomBar.Add(_modelDropdown);

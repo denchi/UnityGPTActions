@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 namespace GPTUnity.Actions
 {
     [GPTAction("Spawns a new (or existing) prefab at a specified position.")]
-    public class SpawnGameObjectAction : GPTActionBase
+    public class SpawnGameObjectAction : GPTAssistantAction
     {
         [GPTParameter("Prefab asset path")] 
         public string PrefabAssetPath { get; set; }

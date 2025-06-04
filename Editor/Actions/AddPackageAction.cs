@@ -13,7 +13,7 @@ using UnityEditor.PackageManager.Requests;
 namespace GPTUnity.Actions
 {
     [GPTAction("Adds a Unity package to manifest.json.")]
-    public class AddPackageAction : GPTActionBase, IGPTActionThatRequiresReload
+    public class AddPackageAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
         [GPTParameter("Name of the package to add, e.g. com.unity.textmeshpro", required: true)]
         public string PackageName { get; set; }

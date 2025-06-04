@@ -34,12 +34,11 @@ public partial class ChatEditorWindow : EditorWindow
     private VisualElement _bottomBar;
     private DropdownField _modelDropdown;
     private Dictionary<string, VisualElement> _elementsByMessage = new();
-    
-    private GptTypesRegister _gptTypesRegister = new GptTypesRegister();
+    private GptTypesRegister _gptTypesRegister = new GptTypesRegister(typeof(GPTAssistantAction));
     private GptActionsFactory _gptActionsFactory = new GptActionsFactory();
     private IconsHelpers _iconsHelpers = new IconsHelpers();
     private IGPTServiceApi _api;
-    
+    private IImageServiceApi _imagesApi;
     private bool _didForceStop = false;
     private string _currentModel = "gpt-4.1-mini";
     private State _state;
@@ -81,7 +80,8 @@ public partial class ChatEditorWindow : EditorWindow
             }
         }
 
-        _api = new OpenAIApiService(key: ChatSettings.instance.ApiKey);
+        _api = new LegacyOpenAIApiService(key: ChatSettings.instance.ApiKey);
+        _imagesApi = new OpenAIImageServiceApi(key: ChatSettings.instance.ApiKey);
         _gptActionsFactory.Init(_gptTypesRegister);
     }
 
@@ -214,6 +214,11 @@ public partial class ChatEditorWindow : EditorWindow
                 var action = _gptActionsFactory.CreateActionFromFunctionCall(toolCall.function);
                 if (action == null) 
                     throw new Exception("Can not find action class: " + toolCall.function.name);
+
+                if (action is IGPTActionThatRequiresImagesApi actionThatRequiresApi)
+                {
+                    actionThatRequiresApi.Images = _imagesApi;
+                }
                     
                 if (!_toolCalls.IsToolCallExecuted(toolCall))
                 {
@@ -492,6 +497,11 @@ public partial class ChatEditorWindow : EditorWindow
             if (action == null) 
                 throw new Exception("Can not find action class: " + toolCall.function.name);
             
+            if (action is IGPTActionThatRequiresImagesApi actionThatRequiresApi)
+            {
+                actionThatRequiresApi.Images = _imagesApi;
+            }
+            
             var toolMessage = new GPTMessage
             {
                 role = "tool",
@@ -512,11 +522,6 @@ public partial class ChatEditorWindow : EditorWindow
     {
         try
         {
-            if (action is IGPTActionWithFiles)
-            {
-                
-            }
-            
             action.Result = toolMessage.content = await action.Execute();
                 
             AddMessageVisualElementWithData(
@@ -540,10 +545,6 @@ public partial class ChatEditorWindow : EditorWindow
             Debug.LogWarning(ex);
             
             action.Result = toolMessage.content = ex.FormatExceptionWithInner(null);
-            
-            // AddMessageVisualElementWithData(
-            //     toolMessage, 
-            //     action: new ShowErrorAction(action, ex));
             
             AddMessageVisualElementWithData(
                 toolMessage, 
@@ -849,7 +850,7 @@ public partial class ChatEditorWindow : EditorWindow
         
         if (string.IsNullOrEmpty(message.content) && message.tool_calls != null && message.tool_calls.Length > 0)
         {
-            label.text = "Used " + string.Join(", ", message.tool_calls.Select(c => c.function.name).Distinct().Select(name => GPTActionBase.Highlight(name)));
+            label.text = "Used " + string.Join(", ", message.tool_calls.Select(c => c.function.name).Distinct().Select(name => GPTAssistantAction.Highlight(name)));
         }
         
         label.style.whiteSpace = WhiteSpace.Normal;

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Gets RectTransform properties of a UI element")]
-    public class GetRectTransformPropertiesAction : GPTActionBase
+    public class GetRectTransformPropertiesAction : GPTAssistantAction
     {
         [GPTParameter("GameObject name")]
         public string ObjectName { get; set; }

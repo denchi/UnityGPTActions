@@ -5,7 +5,7 @@ using GPTUnity.Helpers;
 namespace GPTUnity.Actions
 {
     [GPTAction("Parents one GameObject to another, or unparents if parent is empty.")]
-    public class ParentGameObjectAction : GPTActionBase
+    public class ParentGameObjectAction : GPTAssistantAction
     {
         [GPTParameter("Child GameObject name")]
         public string ChildObject { get; set; }

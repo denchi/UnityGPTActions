@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 namespace GPTUnity.Actions
 {
     [GPTAction("Retrieves all tags.")]
-    public class RetrieveTagsAction : GPTActionBase
+    public class RetrieveTagsAction : GPTAssistantAction
     {
         public override string Description => $"Project tags: {Highlight(string.Join(',', _tags))}";
 

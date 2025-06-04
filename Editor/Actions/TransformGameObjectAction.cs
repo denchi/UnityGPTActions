@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Moves, rotates, or scales an existing GameObject.")]
-    public class TransformGameObjectAction : GPTActionBase
+    public class TransformGameObjectAction : GPTAssistantAction
     {
         [GPTParameter("Name of the GameObject to transform")]
         public string ObjectName { get; set; }

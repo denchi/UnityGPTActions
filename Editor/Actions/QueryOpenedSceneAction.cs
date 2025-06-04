@@ -9,7 +9,7 @@ namespace GPTUnity.Actions
 {
     [GPTAction(
         "Queries the currently opened Unity scene, providing detailed information about game objects, components, and hierarchy.")]
-    public class QueryOpenedSceneAction : GPTActionBase
+    public class QueryOpenedSceneAction : GPTAssistantAction
     {
         [GPTParameter("The game object name to query information about. Use if know the exact name of the GameObject. ")]
         public string TargetName { get; set; }

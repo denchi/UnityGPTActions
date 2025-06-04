@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 namespace GPTUnity.Actions
 {
     [GPTAction("Attaches or removes a component from an existing GameObject.")]
-    public class AttachRemoveComponentAction : GPTActionBase
+    public class AttachRemoveComponentAction : GPTAssistantAction
     {
         [GPTParameter("GameObject name to modify")]
         public string ObjectName { get; set; }

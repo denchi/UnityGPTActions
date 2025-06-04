@@ -7,7 +7,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Creates an Animator Controller and assigns it to a GameObject.")]
-    public class CreateAnimatorControllerAction : GPTActionBase
+    public class CreateAnimatorControllerAction : GPTAssistantAction
     {
         [GPTParameter("Name of the Animator Controller")]
         public string AnimatorName { get; set; }

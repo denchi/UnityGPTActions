@@ -9,7 +9,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Removes a Unity package from manifest.json.")]
-    public class RemovePackageAction : GPTActionBase, IGPTActionThatRequiresReload
+    public class RemovePackageAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
         [GPTParameter("Name of the package to remove, e.g. com.unity.textmeshpro")]
         public string PackageName { get; set; }

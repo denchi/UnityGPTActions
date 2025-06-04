@@ -8,7 +8,7 @@ namespace GPTUnity.Actions
 {
     [GPTAction("Runs Python code inside Unity using unity-python.")]
     [GPTRequiresPackage("com.unity.scripting.python")]
-    public class RunPythonCodeAction : GPTActionBase, IGPTActionThatContainsCode
+    public class RunPythonCodeAction : GPTAssistantAction, IGPTActionThatContainsCode
     {
         [GPTParameter("The Python code to execute")]
         public string Code { get; set; }

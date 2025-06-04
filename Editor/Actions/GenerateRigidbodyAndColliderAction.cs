@@ -6,7 +6,7 @@ using UnityEngine;
 namespace GPTUnity.Actions
 {
     [GPTAction("Adds a Rigidbody and a specified Collider to a GameObject.")]
-    public class GenerateRigidbodyAndColliderAction : GPTActionBase
+    public class GenerateRigidbodyAndColliderAction : GPTAssistantAction
     {
         [GPTParameter("Name of the GameObject")]
         public string ObjectName { get; set; }

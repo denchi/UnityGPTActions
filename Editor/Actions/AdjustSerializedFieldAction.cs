@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 namespace GPTUnity.Actions
 {
     [GPTAction("Adjusts a serialized field on a component.")]
-    public class AdjustSerializedFieldAction : GPTActionBase
+    public class AdjustSerializedFieldAction : GPTAssistantAction
     {
         [GPTParameter("GameObject name")]
         public string ObjectName { get; set; }
