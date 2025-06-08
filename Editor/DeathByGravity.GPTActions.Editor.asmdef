@@ -2,8 +2,8 @@
     "name": "DeathByGravity.GPTActions.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:343f8b7ce9bec4b23b7540dcfa2e84cf",
-        "GUID:542cbad11fd614d0e80eb2b09bb5d017"
+        "DeathByGravity.GPTActions",
+        "DeathByGravity.Environment"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
