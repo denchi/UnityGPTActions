@@ -2,12 +2,14 @@
   "name": "com.deathbygravitystudio.gptactions",
   "version": "0.1.0",
   "displayName": "GPT Actions",
-  "description": "A Unity Editor extension for spawning, manipulating, and automating gameplay logic using AI-powered actions.",
-  "unity": "2021.3",
+  "description": "A Unity Editor extension for manipulating the editor using AI-powered actions.",
   "author": {
     "name": "Death By Gravity Studio",
     "email": "contact@deathbygravitystudio.com",
     "url": "https://deathbygravitystudio.com"
   },
-  "keywords": [ "ai", "unity", "editor", "tooling", "automation", "gpt" ]
+  "keywords": [ "ai", "unity", "editor", "tooling", "automation", "gpt" ],
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.0.1"    
+  }
 }

@@ -16,7 +16,7 @@ public partial class ChatEditorWindow
     private void CreateGUI()
     {
         Debug.Log("===CreateGUI===");
-        
+
         InitDerivedFields();
 
         rootVisualElement.Clear();
@@ -37,7 +37,7 @@ public partial class ChatEditorWindow
         topBar.Add(flexibleSpace);
 
         var toolbar = new Toolbar();
-        
+
 
         // Remove copy, paste, rebuild buttons and replace with 3-dot menu
         toolbar.Add(new ToolbarSpacer { flex = true });
@@ -57,7 +57,7 @@ public partial class ChatEditorWindow
         menuLabel.style.marginRight = 9;
         menuLabel.style.marginLeft = 5;
         menuLabel.style.alignSelf = Align.Center;
-        
+
         //menuLabel.style.cursor = MouseCursor.Link;
         menuLabel.RegisterCallback<MouseDownEvent>(evt =>
         {
@@ -109,28 +109,17 @@ public partial class ChatEditorWindow
                 promptButton.style.marginTop = 0;
                 promptButton.style.marginLeft = 0;
                 promptButton.style.marginRight = 0;
-                
+
                 promptButton.style.paddingLeft = 8;
                 promptButton.style.paddingRight = 8;
-                
+
                 promptButton.style.SetAllBorder(8);
-                
+
                 promptButton.style.backgroundColor = Color.white.WithAlpha(0.8f);
                 promptButton.style.color = new Color(0.13f, 0.18f, 0.22f, 1.0f);
                 promptButton.style.unityFontStyleAndWeight = FontStyle.Normal;
                 promptButton.style.unityTextAlign = TextAnchor.MiddleLeft;
-                //promptButton.style.width = Length.Percent(80);
                 
-                // promptButton.style.boxShadow = new StyleBackground(null); // Remove default shadow
-                // Add a subtle shadow using Unity's shadow property if available
-// #if UNITY_2022_2_OR_NEWER
-//                 promptButton.style.boxShadow = new StyleBoxShadow(
-//                     new BoxShadow(
-//                         new Color(0, 0, 0, 0.08f),
-//                         0, 2, 8, 0, BoxShadowType.Outer
-//                     )
-//                 );
-// #endif
                 promptList.Add(promptButton);
             }
 
@@ -147,23 +136,23 @@ public partial class ChatEditorWindow
 
         // Input area
         _bottomBar = new VisualElement();
-        _bottomBar.style.flexDirection = FlexDirection.Row;
-        _bottomBar.style.minHeight = _bottomBar.style.maxHeight = 84+2*2+2*2;
+        _bottomBar.style.flexDirection = FlexDirection.Column;
+        _bottomBar.style.minHeight = _bottomBar.style.maxHeight = 84 + 2 * 2 + 2 * 2 + 15;
         _bottomBar.style.width = Length.Percent(100);
         _bottomBar.style.marginBottom = 10;
         _bottomBar.style.marginTop = 10;
         _bottomBar.style.SetAllPadding(2);
 
         // Add blue outline
-        _bottomBar.style.borderTopWidth = 
-            _bottomBar.style.borderBottomWidth = 
-                _bottomBar.style.borderLeftWidth = 
+        _bottomBar.style.borderTopWidth =
+            _bottomBar.style.borderBottomWidth =
+                _bottomBar.style.borderLeftWidth =
                     _bottomBar.style.borderRightWidth = 2;
-        _bottomBar.style.borderTopColor = 
-            _bottomBar.style.borderBottomColor = 
-                _bottomBar.style.borderLeftColor = 
+        _bottomBar.style.borderTopColor =
+            _bottomBar.style.borderBottomColor =
+                _bottomBar.style.borderLeftColor =
                     _bottomBar.style.borderRightColor = new Color(0.251f, 0.553f, 1.0f, 1.0f); // #408DFF in RGBA
-
+        
         _inputField = new TextField();
         _inputField.multiline = true;
         _inputField.label = string.Empty;
@@ -182,21 +171,30 @@ public partial class ChatEditorWindow
         //_inputField.style.resize = new StyleEnum<Resize>(Resize.Vertical);
 
         _inputField.RegisterCallback<KeyDownEvent>(OnKeyDown);
-        _bottomBar.Add(_inputField);
+
+        var line = new VisualElement
+        {
+            style =
+            {
+                flexDirection = FlexDirection.Row,
+            }
+        };
         
         _modelDropdown = new DropdownField("");
         _modelDropdown.style.height = 20;
         _modelDropdown.choices = _api.Models.ToList();
         _modelDropdown.value = _currentModel;
         _modelDropdown.RegisterValueChangedCallback(OnModelDropDownValueChanged);
-        _bottomBar.Add(_modelDropdown);
+        line.Add(_modelDropdown);
+        line.Add(new VisualElement{ style = { flexGrow = 1}});
 
         // Stack container for buttons
         var buttonStack = new VisualElement();
         buttonStack.style.width = 20;
         buttonStack.style.height = 20;
-        buttonStack.style.position = Position.Relative; // or Absolute if you want more control
         buttonStack.style.marginRight = 6; // Optional: space between input and buttons
+        buttonStack.style.paddingTop = 2; // Optional: space between input and buttons
+        
 
         _sendButton = new Button(SendCurrentMessageToServerAsync)
         {
@@ -204,7 +202,8 @@ public partial class ChatEditorWindow
             {
                 width = 18,
                 height = 18,
-                backgroundImage = _iconsHelpers.LoadUnityIcon("d_PlayButton")
+                backgroundImage = _iconsHelpers.LoadUnityIcon("d_PlayButton"),
+                position = Position.Absolute,
             },
             visible = true
         };
@@ -217,13 +216,19 @@ public partial class ChatEditorWindow
             {
                 width = 18,
                 height = 18,
-                backgroundImage = _iconsHelpers.LoadUnityIcon("d_PreMatQuad")
+                backgroundImage = _iconsHelpers.LoadUnityIcon("d_PreMatQuad"),
+                position = Position.Absolute,
+                // Add red tint to the icon
+                unityBackgroundImageTintColor = Color.red
             },
             visible = false
         };
 
         buttonStack.Add(_stopButton);
-        _bottomBar.Add(buttonStack);
+        line.Add(buttonStack);
+        
+        _bottomBar.Add(line);
+        _bottomBar.Add(_inputField);
 
         root.Add(_bottomBar);
         rootVisualElement.Add(root);

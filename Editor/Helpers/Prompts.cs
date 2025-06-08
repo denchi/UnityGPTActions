@@ -61,7 +61,8 @@ namespace GPTUnity.Helpers
             { "How can I improve my Unity project?", "How can I improve my Unity project?" },
             { "Create a endless runner", "Create a endless runner in a 3d perspective with camera following behing the characters back" },
             { "Optimize Performance", "What is the best way to optimize performance?" },
-            { "Suggest Features", "Suggest some new features." }
+            { "Suggest Features", "Suggest some new features." },
+            { "Surprise me", "Give me an random idea for a simple game i can make using this assistant" },
         };
     }
 }
