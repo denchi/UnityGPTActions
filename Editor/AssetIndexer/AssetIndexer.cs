@@ -119,30 +119,30 @@ namespace GptActions.Editor.AssetIndexer
             Debug.Log("Asset index updated and exported.");
         }
 
-        [MenuItem("Tools/Upload Asset Index to OpenAI")]
-        public static async void UploadToOpenAI()
-        {
-            if (!File.Exists(FilePath))
-            {
-                Debug.LogError("Asset index file not found.");
-                return;
-            }
-            
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ChatSettings.instance.ApiKey);
-
-            // Upload new file
-            using var form = new MultipartFormDataContent();
-            using var fs = File.OpenRead(FilePath);
-            var fileContent = new StreamContent(fs);
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            form.Add(fileContent, "file", "ExportedAssetIndex.json");
-            form.Add(new StringContent("file-search"), "purpose");
-
-            Debug.Log("Uploading file to OpenAI...");
-            var response = await client.PostAsync("https://api.openai.com/v1/files", form);
-            var result = await response.Content.ReadAsStringAsync();
-            Debug.Log("Upload result: " + result);
-        }
+        // [MenuItem("Tools/Upload Asset Index to OpenAI")]
+        // public static async void UploadToOpenAI()
+        // {
+        //     if (!File.Exists(FilePath))
+        //     {
+        //         Debug.LogError("Asset index file not found.");
+        //         return;
+        //     }
+        //     
+        //     var client = new HttpClient();
+        //     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ChatSettings.instance.ApiKey);
+        //
+        //     // Upload new file
+        //     using var form = new MultipartFormDataContent();
+        //     using var fs = File.OpenRead(FilePath);
+        //     var fileContent = new StreamContent(fs);
+        //     fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        //     form.Add(fileContent, "file", "ExportedAssetIndex.json");
+        //     form.Add(new StringContent("file-search"), "purpose");
+        //
+        //     Debug.Log("Uploading file to OpenAI...");
+        //     var response = await client.PostAsync("https://api.openai.com/v1/files", form);
+        //     var result = await response.Content.ReadAsStringAsync();
+        //     Debug.Log("Upload result: " + result);
+        // }
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Game.Environment;
 using GPTUnity.Actions.Interfaces;
 using Newtonsoft.Json.Linq;
 
@@ -15,14 +16,17 @@ namespace GPTUnity.Actions
         public string Content => Query;
 
         // Replace with your actual SerpAPI key
-        private const string SerpApiKey = "3462f64e2ab5e52c43075a5529a68cd6c5c28d8784d7dbad0fb8ebf5e560ef55";
-
         public override async Task<string> Execute()
         {
             if (string.IsNullOrWhiteSpace(Query))
                 return "Query parameter is required.";
+            
+            if (!Env.TryGetEnv("SERP_API_KEY", out var apiKey))
+            {
+                throw new Exception("SerpAPI key is not set. Please set the SERP_API_KEY environment variable.");
+            }
 
-            var url = $"https://serpapi.com/search.json?q={Uri.EscapeDataString(Query)}&api_key={SerpApiKey}&num=1";
+            var url = $"https://serpapi.com/search.json?q={Uri.EscapeDataString(Query)}&api_key={apiKey}&num=1";
 
             using (var client = new HttpClient())
             {

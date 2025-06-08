@@ -1,6 +1,6 @@
+using System;
 using System.Linq;
 using System.Reflection;
-using GPTUnity.Api;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
 using Newtonsoft.Json;
@@ -16,6 +16,34 @@ public partial class ChatEditorWindow
     private void CreateGUI()
     {
         Debug.Log("===CreateGUI===");
+
+        try
+        {
+            InitApi();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to initialize API: {e.Message}. Make sure the keys are defined!");
+            
+            rootVisualElement.Clear();
+
+            var label = new Label();
+            label.style.flexGrow = 1;
+            label.text = "Failed to initialize API. Please check your settings.";
+            label.style.SetAllPadding(10);
+
+            var button = new Button();
+            button.text = "Try Again";
+            button.clicked += () =>
+            {
+                CreateGUI();
+            };
+            
+            rootVisualElement.Add(label);
+            rootVisualElement.Add(button);
+            
+            return;
+        }
 
         InitDerivedFields();
 
@@ -264,9 +292,7 @@ public partial class ChatEditorWindow
                 Debug.Log($"Restored value for {field.Name} = {value}");
             }
         }
-
-        _api = new LegacyOpenAIApiService(key: ChatSettings.instance.ApiKey);
-        _imagesApi = new OpenAIImageServiceApi(key: ChatSettings.instance.ApiKey);
+        
         _gptActionsFactory.Init(_gptTypesRegister);
     }
 

@@ -18,9 +18,6 @@ namespace GPTUnity.Data
                     var settings = ChatSettings.instance;
                     EditorGUI.BeginChangeCheck();
 
-                    // API Key field
-                    var newApiKey = EditorGUILayout.PasswordField("API Key", settings.ApiKey);
-
                     // Color fields
                     var newColorBackgroundUser =
                         EditorGUILayout.ColorField("User Background Color", settings.ColorBackgroundUser);
@@ -31,7 +28,6 @@ namespace GPTUnity.Data
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        settings.ApiKey = newApiKey;
                         settings.ColorBackgroundUser = newColorBackgroundUser;
                         settings.ColorBackgroundAssistant = newColorBackgroundAssistant;
                         settings.ColorChatBackground = newColorChatBackground;

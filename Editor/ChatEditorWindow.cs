@@ -4,11 +4,9 @@ using UnityEditor;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using GptActions.Editor.AssetIndexer;
+using Game.Environment;
 using GPTUnity.Actions;
 using GPTUnity.Actions.Interfaces;
 using GPTUnity.Api;
@@ -16,7 +14,6 @@ using GPTUnity.Data;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
 using Newtonsoft.Json;
-using UnityEditor.UIElements;
 
 public partial class ChatEditorWindow : EditorWindow
 {
@@ -845,6 +842,17 @@ public partial class ChatEditorWindow : EditorWindow
     
     private class SerializeGptEditorFieldAttribute : Attribute
     {
+    }
+
+    private void InitApi()
+    {
+        if (!Env.TryGetEnv("OPENAI_API_KEY", out var apiKey))
+        {
+            throw new Exception($"OpenAI key is not set. Please set the OPENAI_API_KEY environment variable.");
+        }
+        
+        _api = new LegacyOpenAIApiService(key: apiKey);
+        _imagesApi = new OpenAIImageServiceApi(key: apiKey);
     }
 }
 
