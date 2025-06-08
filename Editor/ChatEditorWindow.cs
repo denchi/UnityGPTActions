@@ -854,5 +854,53 @@ public partial class ChatEditorWindow : EditorWindow
         _api = new LegacyOpenAIApiService(key: apiKey);
         _imagesApi = new OpenAIImageServiceApi(key: apiKey);
     }
+    
+    private bool CheckApiKeysProvided()
+    {
+        try
+        {
+            InitApi();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to initialize API: {e.Message}. Make sure the keys are defined!");
+            
+            ShowNoApiKeysUI();
+
+            return false;
+        }
+
+        return true;
+    }
+    
+    private void InitDerivedFields()
+    {
+        if (_requestSent && _requestReceived)
+        {
+            _requestSent = false;
+            _requestReceived = false;
+            _requiresSendToServer = false;
+        }
+
+        var fields = GetType()
+            .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(f => f.GetCustomAttributes(typeof(SerializeGptEditorFieldAttribute), true).Any());
+        
+        foreach (var field in fields)
+        {
+            // Read field value from Editorprefs
+            var value = EditorPrefs.GetString(field.Name, string.Empty);
+            if (!string.IsNullOrEmpty(value))
+            {
+                // Deserialize the value and set it to the field
+                var deserializedValue = JsonConvert.DeserializeObject(value, field.FieldType);
+                field.SetValue(this, deserializedValue);
+                
+                Debug.Log($"Restored value for {field.Name} = {value}");
+            }
+        }
+        
+        _gptActionsFactory.Init(_gptTypesRegister);
+    }
 }
 

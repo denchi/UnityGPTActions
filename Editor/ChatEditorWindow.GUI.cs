@@ -1,10 +1,6 @@
-using System;
 using System.Linq;
-using System.Reflection;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
-using Newtonsoft.Json;
-using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -15,35 +11,8 @@ public partial class ChatEditorWindow
 
     private void CreateGUI()
     {
-        Debug.Log("===CreateGUI===");
-
-        try
-        {
-            InitApi();
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Failed to initialize API: {e.Message}. Make sure the keys are defined!");
-            
-            rootVisualElement.Clear();
-
-            var label = new Label();
-            label.style.flexGrow = 1;
-            label.text = "Failed to initialize API. Please check your settings.";
-            label.style.SetAllPadding(10);
-
-            var button = new Button();
-            button.text = "Try Again";
-            button.clicked += () =>
-            {
-                CreateGUI();
-            };
-            
-            rootVisualElement.Add(label);
-            rootVisualElement.Add(button);
-            
+        if (!CheckApiKeysProvided()) 
             return;
-        }
 
         InitDerivedFields();
 
@@ -266,34 +235,97 @@ public partial class ChatEditorWindow
         OnGUICreated();
     }
 
-    private void InitDerivedFields()
+    private void ShowNoApiKeysUI()
     {
-        if (_requestSent && _requestReceived)
-        {
-            _requestSent = false;
-            _requestReceived = false;
-            _requiresSendToServer = false;
-        }
+        rootVisualElement.Clear();
 
-        var fields = GetType()
-            .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-            .Where(f => f.GetCustomAttributes(typeof(SerializeGptEditorFieldAttribute), true).Any());
-        
-        foreach (var field in fields)
+        var container = new VisualElement();
+        container.style.flexDirection = FlexDirection.Column;
+        container.style.justifyContent = Justify.Center;
+        container.style.alignItems = Align.Center;
+        container.style.flexGrow = 1;
+        container.style.height = Length.Percent(100);
+        container.style.backgroundColor = new Color(0.97f, 0.98f, 1.0f, 1.0f);
+
+        var card = new VisualElement();
+        card.style.flexDirection = FlexDirection.Column;
+        card.style.alignItems = Align.Center;
+        card.style.backgroundColor = Color.white;
+        card.style.borderTopLeftRadius = card.style.borderTopRightRadius =
+            card.style.borderBottomLeftRadius = card.style.borderBottomRightRadius = 10;
+        card.style.paddingTop = 24;
+        card.style.paddingBottom = 24;
+        card.style.paddingLeft = 32;
+        card.style.paddingRight = 32;
+        card.style.marginTop = 40;
+        card.style.marginBottom = 40;
+        card.style.unityFontStyleAndWeight = FontStyle.Bold;
+
+        // Icon
+        var icon = new Image();
+        icon.image = _iconsHelpers.LoadUnityIcon("d_console.erroricon"); // Unity's error icon
+        icon.style.width = 40;
+        icon.style.height = 40;
+        icon.style.marginBottom = 10;
+        card.Add(icon);
+
+        // Main message
+        var label = new Label("No API Key Found");
+        label.style.fontSize = 18;
+        label.style.unityFontStyleAndWeight = FontStyle.Bold;
+        label.style.marginBottom = 6;
+        card.Add(label);
+
+        // Subtext
+        var subLabel = new Label("Please add your OpenAI API key in the .env to use the chat.");
+        subLabel.style.fontSize = 13;
+        subLabel.style.color = new Color(0.3f, 0.3f, 0.3f, 1f);
+        subLabel.style.marginBottom = 16;
+        subLabel.style.unityFontStyleAndWeight = FontStyle.Normal;
+        card.Add(subLabel);
+
+        // Button row
+        var buttonRow = new VisualElement();
+        buttonRow.style.flexDirection = FlexDirection.Row;
+        buttonRow.style.justifyContent = Justify.Center;
+        buttonRow.style.alignItems = Align.Center;
+
+        var openSettingsButton = new Button(() =>
         {
-            // Read field value from Editorprefs
-            var value = EditorPrefs.GetString(field.Name, string.Empty);
-            if (!string.IsNullOrEmpty(value))
+            // show .env file in STreamingAssets folder
+            var envPath = System.IO.Path.Combine(Application.streamingAssetsPath, ".env");
+            if (System.IO.File.Exists(envPath))
             {
-                // Deserialize the value and set it to the field
-                var deserializedValue = JsonConvert.DeserializeObject(value, field.FieldType);
-                field.SetValue(this, deserializedValue);
-                
-                Debug.Log($"Restored value for {field.Name} = {value}");
+                UnityEditor.EditorUtility.RevealInFinder(envPath);
             }
-        }
-        
-        _gptActionsFactory.Init(_gptTypesRegister);
+            else
+            {
+                UnityEditor.EditorUtility.DisplayDialog("File Not Found", "The .env file does not exist in the StreamingAssets folder.", "OK");
+            }
+        })
+        {
+            text = "Open .env File"
+        };
+        openSettingsButton.style.marginRight = 8;
+        openSettingsButton.style.paddingLeft = 14;
+        openSettingsButton.style.paddingRight = 14;
+        openSettingsButton.style.height = 26;
+
+        var retryButton = new Button(CreateGUI)
+        {
+            text = "Try Again"
+        };
+        retryButton.style.paddingLeft = 14;
+        retryButton.style.paddingRight = 14;
+        retryButton.style.height = 26;
+
+        buttonRow.Add(openSettingsButton);
+        buttonRow.Add(retryButton);
+
+        card.Add(buttonRow);
+        container.Add(card);
+
+        rootVisualElement.Add(container);
     }
 
     #endregion
