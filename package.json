@@ -8,6 +8,7 @@
     "email": "contact@deathbygravitystudio.com",
     "url": "https://deathbygravitystudio.com"
   },
+  "license": "MIT",
   "keywords": [ "ai", "unity", "editor", "tooling", "automation", "gpt" ],
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.0.1",
