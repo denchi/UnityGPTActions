@@ -69,6 +69,12 @@ namespace GPTUnity.Helpers
                 //Assembly.GetExecutingAssembly(), // this would be package assembly
                 Assembly.GetAssembly(_gptActionType)
             };
+            
+            // Add all assemblies in the current AppDomain
+            assemblies.AddRange(AppDomain
+                .CurrentDomain
+                .GetAssemblies()
+                .Where(a => !a.IsDynamic && a.FullName.StartsWith("Assembly-CSharp")));
 
             _actions = new Dictionary<string, Type>();
 
