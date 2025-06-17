@@ -17,3 +17,4 @@ jobs:
         with:
           projectPath: .
           testMode: EditMode
+          packageMode: true

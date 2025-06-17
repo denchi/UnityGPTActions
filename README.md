@@ -35,7 +35,7 @@ Chat and tool call history is stored between sessions so you can continue a conv
 
 ## Tests
 
-EditMode unit tests run in CI using [Unity Test Runner](https://github.com/marketplace/actions/unity-test-runner).
+EditMode unit tests run in CI using [Unity Test Runner](https://github.com/marketplace/actions/unity-test-runner) in package mode.
 
 ## License
 

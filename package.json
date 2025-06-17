@@ -13,5 +13,6 @@
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.0.1",
     "com.deathbygravitystudio.environment": "https://github.com/denchi/UnityEnvironment.git"
-  }
+  },
+  "testable": true
 }
