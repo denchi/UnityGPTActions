@@ -33,6 +33,10 @@ The OpenAI key is required for chatting with the assistant. The optional SerpAPI
 
 Chat and tool call history is stored between sessions so you can continue a conversation after closing the editor.
 
+## Tests
+
+EditMode unit tests run in CI using [Unity Test Runner](https://github.com/marketplace/actions/unity-test-runner).
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
