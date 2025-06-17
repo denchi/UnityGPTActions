@@ -1,6 +1,6 @@
 # GPT Actions for Unity
 
-[![Tests](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml/badge.svg)](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml)
+[![Tests](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml)
 
 **GPT Actions** is a Unity Editor extension that adds an AI powered chat window capable of executing editor actions through OpenAI's GPT models. The package exposes a collection of tools that let the assistant create and modify assets, generate scripts, query project information and automate common Unity workflows.
 
