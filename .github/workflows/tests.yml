@@ -16,5 +16,6 @@ jobs:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
         with:
           projectPath: .
+          unityVersion: 2021.2.3f1
           testMode: EditMode
           packageMode: true
