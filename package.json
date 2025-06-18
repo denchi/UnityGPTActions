@@ -11,8 +11,7 @@
   "license": "MIT",
   "keywords": [ "ai", "unity", "editor", "tooling", "automation", "gpt" ],
   "dependencies": {
-    "com.unity.nuget.newtonsoft-json": "3.0.1",
-    "com.deathbygravitystudio.environment": "https://github.com/denchi/UnityEnvironment.git"
+    "com.unity.nuget.newtonsoft-json": "3.0.1"
   },
   "testable": true
 }
