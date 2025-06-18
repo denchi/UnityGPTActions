@@ -11,13 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: game-ci/unity-test-runner@v2
+      - name: Move package out of root
+        run: |
+          mkdir _pkg
+          shopt -s dotglob extglob
+          mv !(_pkg) _pkg/
+      - uses: game-ci/unity-test-runner@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          projectPath: .
+          projectPath: _pkg
           unityVersion: 2021.2.3f1
           testMode: EditMode
           packageMode: true
