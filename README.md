@@ -1,5 +1,7 @@
 # GPT Actions for Unity
 
+[![Tests](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml)
+
 **GPT Actions** is a Unity Editor extension that adds an AI powered chat window capable of executing editor actions through OpenAI's GPT models. The package exposes a collection of tools that let the assistant create and modify assets, generate scripts, query project information and automate common Unity workflows.
 
 ## Installation
@@ -30,6 +32,10 @@ The OpenAI key is required for chatting with the assistant. The optional SerpAPI
 3. Actions include creating prefabs, generating scripts and shaders, adjusting serialized fields, querying assets, managing packages and more.
 
 Chat and tool call history is stored between sessions so you can continue a conversation after closing the editor.
+
+## Tests
+
+EditMode unit tests run in CI using [Unity Test Runner](https://github.com/marketplace/actions/unity-test-runner) in package mode.
 
 ## License
 
