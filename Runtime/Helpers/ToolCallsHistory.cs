@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace GPTUnity.Helpers
 {
+    /// <summary>
+    /// Keeps track of executed tool calls to avoid duplicates. 
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class ToolCallsHistory
     {

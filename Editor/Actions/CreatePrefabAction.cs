@@ -15,8 +15,6 @@ namespace GPTUnity.Actions
         [GPTParameter("GameObject name to make a prefab from")]
         public string GameObjectName { get; set; }
 
-        public override string Description => $"Created prefab '{Highlight(PrefabAssetPath)}'";
-
         public override async Task<string> Execute()
         {
 #if UNITY_EDITOR

@@ -21,8 +21,6 @@ namespace GPTUnity.Actions
         [GPTParameter("Version of the package to add, e.g. 3.0.6", required: true)]
         public string Version { get; set; }
 
-        public override string Description => $"Added package: {Highlight(PackageName + "@" + Version)}";
-
         public override async Task<string> Execute()
         {
 #if UNITY_EDITOR

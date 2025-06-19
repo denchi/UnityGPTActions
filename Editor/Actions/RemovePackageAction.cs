@@ -14,8 +14,6 @@ namespace GPTUnity.Actions
         [GPTParameter("Name of the package to remove, e.g. com.unity.textmeshpro")]
         public string PackageName { get; set; }
 
-        public override string Description => $"Removed package: {Highlight(PackageName)}";
-
         public override async Task<string> Execute()
         {
             #if UNITY_EDITOR

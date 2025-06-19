@@ -2,81 +2,47 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using GPTUnity.Actions.Interfaces;
-using UnityEngine;
 
 namespace GPTUnity.Helpers
 {
+    /// <summary>
+    /// Responsible for discovering and registering GPT action classes that can be exposed as function tools to the GPT API.
+    /// This class scans assemblies to find all eligible action types and converts them into a format compatible with GPT.
+    /// </summary>
     public class GptTypesRegister
     {
-        public Dictionary<string, Type> Actions
-        {
-            get
-            {
-                if (_actions == null || _actions.Count == 0)
-                {
-                    CollectGptActions();
-                }
+        /// <summary>
+        /// Gets the collection of function definitions formatted for the GPT API.
+        /// These represent all the available actions that GPT can invoke.
+        /// </summary>
+        public object[] Tools { get; }
 
-                return _actions;
-            }
-        }
-
-        public List<object> Functions
-        {
-            get
-            {
-                if (_functions == null || _functions.Count == 0)
-                {
-                    CreateFunctions();
-                }
-
-                return _functions;
-            }
-        }
-
-        public object[] Tools
-        {
-            get
-            {
-                if (_tools == null || _tools.Length == 0)
-                {
-                    CreateFunctions();
-                }
-
-                return _tools;
-            }
-        }
-
-        private Dictionary<string, Type> _actions;
-        private List<object> _functions;
-        private object[] _tools;
-        private object tools;
-        private Type _gptActionType;
+        /// <summary>Dictionary mapping action names to their corresponding Types</summary>
+        private readonly Dictionary<string, Type> actions;
         
+        /// <summary>Base type that all GPT actions must inherit from</summary>
+        private readonly Type baseActionType;
+        
+        /// <summary>
+        /// Initializes a new instance of the GptTypesRegister class.
+        /// </summary>
+        /// <param name="rootType">The base type from which all GPT actions must derive</param>
         public GptTypesRegister(Type rootType)
         {
-            _gptActionType = rootType;
-            
-            CollectGptActions();
-            CreateFunctions();
+            baseActionType = rootType;
+            actions = CollectGptActions();
+            Tools = CreateFunctions();
         }
 
-        private void CollectGptActions()
+        /// <summary>
+        /// Scans assemblies to find all classes that derive from the base action type
+        /// and have the GPTActionAttribute applied.
+        /// </summary>
+        /// <returns>Dictionary mapping action names to their Type definitions</returns>
+        private Dictionary<string, Type> CollectGptActions()
         {
-            var assemblies = new List<Assembly>
-            {
-                //Assembly.GetExecutingAssembly(), // this would be package assembly
-                Assembly.GetAssembly(_gptActionType)
-            };
-            
-            // Add all assemblies in the current AppDomain
-            assemblies.AddRange(AppDomain
-                .CurrentDomain
-                .GetAssemblies()
-                .Where(a => !a.IsDynamic && a.FullName.StartsWith("Assembly-CSharp")));
-
-            _actions = new Dictionary<string, Type>();
+            var assemblies = GetAvailableAssemblies();
+            var actionsDict = new Dictionary<string, Type>();
 
             foreach (var assembly in assemblies)
             {
@@ -84,7 +50,7 @@ namespace GPTUnity.Helpers
                     .GetTypes();
             
                 var assignableTypes = types
-                    .Where(t => _gptActionType.IsAssignableFrom(t));
+                    .Where(t => baseActionType.IsAssignableFrom(t));
             
                 var actionTypes = assignableTypes
                     .Where(t =>
@@ -92,18 +58,25 @@ namespace GPTUnity.Helpers
                 
                 foreach (var actionType in actionTypes)
                 {
-                    _actions[actionType.Name] = actionType;
+                    actionsDict[actionType.Name] = actionType;
                 }
             }
-        }
 
-        private void CreateFunctions()
+            return actionsDict;
+        }
+        
+        /// <summary>
+        /// Converts collected action types into function definitions compatible with GPT API.
+        /// Each function defines a tool that GPT can use to interact with the system.
+        /// </summary>
+        /// <returns>Array of function objects formatted for GPT API</returns>
+        private object[] CreateFunctions()
         {
-            var functions = Actions.Select(action =>
+            var functions = actions.Select(action =>
             {
                 var parameters = GetFunctionParameters(action.Value);
                 var description = GetTypeDescription(action.Value);
-                var required = GetFunctionParametersRequired(action.Value);
+                var required = GetRequiredParameterNames(action.Value);
 
                 return new
                 {
@@ -115,17 +88,43 @@ namespace GPTUnity.Helpers
                         properties = parameters
                     },
                     required,
-                    // strict = true,
-                    // additionalProperties = false,
-                    // tool_choice: "required"
                 };
             });
-
-            _functions = functions.ToList<object>();
-            _tools = functions.Select(x => new { type = "function", function = x }).ToArray();
+            
+            return functions
+                .Select(x => new { type = "function", function = x })
+                .ToArray<object>();
         }
 
-        private object GetFunctionParameters(Type actionType)
+        /// <summary>
+        /// Collects relevant assemblies where GPT action types might be defined.
+        /// Includes the assembly containing the base action type and user assemblies.
+        /// </summary>
+        /// <returns>List of assemblies to scan for GPT actions</returns>
+        private List<Assembly> GetAvailableAssemblies()
+        {
+            var assemblies = new List<Assembly>
+            {
+                //Assembly.GetExecutingAssembly(), // this would be package assembly
+                Assembly.GetAssembly(baseActionType)
+            };
+            
+            // Add all assemblies in the current AppDomain
+            assemblies.AddRange(AppDomain
+                .CurrentDomain
+                .GetAssemblies()
+                .Where(assembly => !assembly.IsDynamic && assembly.FullName.StartsWith("Assembly-CSharp")));
+
+            return assemblies;
+        }
+        
+        /// <summary>
+        /// Extracts parameter information from an action type's properties that have
+        /// the GPTParameterAttribute. Handles special case for enum properties.
+        /// </summary>
+        /// <param name="actionType">The action type to extract parameters from</param>
+        /// <returns>Dictionary mapping parameter names to their definitions</returns>
+        private Dictionary<string, object> GetFunctionParameters(Type actionType)
         {
             var parameters = new Dictionary<string, object>();
 
@@ -158,7 +157,13 @@ namespace GPTUnity.Helpers
             return parameters;
         }
 
-        private List<String> GetFunctionParametersRequired(Type actionType)
+        /// <summary>
+        /// Identifies which parameters are required for an action type based on
+        /// the Required property of the GPTParameterAttribute.
+        /// </summary>
+        /// <param name="actionType">The action type to check for required parameters</param>
+        /// <returns>List of required parameter names</returns>
+        private List<String> GetRequiredParameterNames(Type actionType)
         {
             var required = new List<String>();
             foreach (var property in actionType.GetProperties())
@@ -176,6 +181,11 @@ namespace GPTUnity.Helpers
             return required;
         }
 
+        /// <summary>
+        /// Retrieves the description of an action type from its GPTActionAttribute.
+        /// </summary>
+        /// <param name="actionType">The action type to get the description for</param>
+        /// <returns>Description string or null if no attribute exists</returns>
         private string GetTypeDescription(Type actionType)
         {
             var attribute = actionType.GetCustomAttribute<GPTActionAttribute>();
@@ -185,6 +195,17 @@ namespace GPTUnity.Helpers
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Attempts to find an action type by its function call name.
+        /// </summary>
+        /// <param name="functionCallName">Name of the function being called by GPT</param>
+        /// <param name="type">When successful, contains the action type; otherwise, null</param>
+        /// <returns>True if the action was found; otherwise, false</returns>
+        public bool TryGetAction(string functionCallName, out Type type)
+        {
+            return actions.TryGetValue(functionCallName, out type);
         }
     }
 }

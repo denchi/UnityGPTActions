@@ -30,8 +30,6 @@ namespace GPTUnity.Actions
         [GPTParameter("Shader params: Ex: _color:0.1,0.2,1,1:color;_mainTex:Assets/Textures/1.png:texture;_value:0.1:float;_intensity:2:int;_dir:0.1,0.2,1,1:vector;")]
         public string ShaderParams { get; set; }
 
-        public override string Description => $"Created material {Highlight(FileName)}";
-
         public override async Task<string> Execute()
         {
 #if UNITY_EDITOR

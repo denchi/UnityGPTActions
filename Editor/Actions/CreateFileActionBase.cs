@@ -16,9 +16,6 @@ namespace GPTUnity.Actions
         [GPTParameter("Best location matching this file. Ex: Assets/")]
         public string PathToDirectory { get; set; } = "NewFile";
 
-        public override string Description =>
-            $"File <color=yellow>{FileName}{FileExtension}</color> created at <color=yellow>{PathToDirectory}</color>";
-
         public virtual string Content { get; protected set; }
 
         public void CreateFile(string overridePath = null)

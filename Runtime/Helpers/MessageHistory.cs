@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace GPTUnity.Helpers
 {
+    /// <summary>
+    /// Manages the history of messages exchanged with the API.
+    /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
     public class MessageHistory
     {

@@ -21,7 +21,7 @@ namespace GPTUnity.Helpers
 
         public IGPTAction CreateActionFromFunctionCall(GPTFunctionCall functionCall)
         {
-            if (!typesRegister.Actions.TryGetValue(functionCall.name, out var actionType))
+            if (!typesRegister.TryGetAction(functionCall.name, out var actionType))
             {
                 throw new Exception("Action class not found: " + functionCall.name);
             }

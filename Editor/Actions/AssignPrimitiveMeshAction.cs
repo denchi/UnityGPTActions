@@ -16,9 +16,6 @@ namespace GPTUnity.Actions
         [GPTParameter("Name of the GameObject")]
         public string ObjectName { get; set; }
 
-        public override string Description =>
-            $"Assigned {Highlight(PrimitiveType.ToString())} mesh to {Highlight(ObjectName)}.";
-
         public override async Task<string> Execute()
         {
 #if UNITY_EDITOR

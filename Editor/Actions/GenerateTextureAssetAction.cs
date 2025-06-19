@@ -34,7 +34,6 @@ namespace GPTUnity.Actions
         public bool SaveAsSprite { get; set; }
         
         public string Content => $"{Prompt} --width {Width} --height {Height} --transparent {Transparent}";
-        public override string Description => $"Created texture {Highlight(FileName)}";
 
         public IImageServiceApi Images { get; set; }
 

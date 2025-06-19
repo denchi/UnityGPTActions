@@ -31,8 +31,6 @@ namespace GPTUnity.Actions
         [GPTParameter("New local rotation in 'x,y,z' format. Leave empty if no change.")]
         public string LocalRotation { get; set; }
 
-        public override string Description => $"Spawned '{Highlight(PrefabAssetPath)}' at '{Highlight(Position)}'";
-
         public override async Task<string> Execute()
         {
 #if UNITY_EDITOR

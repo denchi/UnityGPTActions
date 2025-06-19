@@ -10,7 +10,6 @@ namespace GPTUnity.Actions
     public abstract class GPTActionBase : IGPTAction
     {
         public virtual string Result { get; set; }
-        public virtual string Description { get; }
 
         public abstract Task<string> Execute();
 
