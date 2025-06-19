@@ -10,7 +10,8 @@ namespace GPTUnity.Actions
     [GPTAction("Creates a new prefab from a selected GameObject.")]
     public class CreatePrefabAction : GPTAssistantAction
     {
-        [GPTParameter("Prefab asset path")] public string PrefabAssetPath { get; set; }
+        [GPTParameter("Prefab asset path")] 
+        public string PrefabAssetPath { get; set; }
 
         [GPTParameter("GameObject name to make a prefab from")]
         public string GameObjectName { get; set; }

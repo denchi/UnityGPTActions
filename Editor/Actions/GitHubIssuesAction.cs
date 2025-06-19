@@ -10,21 +10,7 @@ using Newtonsoft.Json.Linq;
 
 namespace GPTUnity.Actions
 {
-    public enum GitHubIssueOperation
-    {
-        Get,
-        Create,
-        Update
-    }
-    
-    public enum GitHubIssueState
-    {
-        Open,
-        Closed,
-        All
-    }
-
-    [GPTAction("Manage GitHub issues - get issues with filters, create new issues, or update existing ones.")]
+    [GPTAction("Manage issues/tasks (Github): get issues with filters, create new issues, or update existing ones.")]
     public class GitHubIssuesAction : GPTAssistantAction, IGPTActionThatContainsCode
     {
         [GPTParameter("Operation to perform: Get (fetch issues), Create (new issue), or Update (existing issue)", true)]
@@ -280,6 +266,20 @@ namespace GPTUnity.Actions
                    $"Title: {issue["title"]}\n" +
                    $"State: {issue["state"]}\n" + 
                    $"URL: {issue["html_url"]}";
+        }
+        
+        public enum GitHubIssueOperation
+        {
+            Get,
+            Create,
+            Update
+        }
+    
+        public enum GitHubIssueState
+        {
+            Open,
+            Closed,
+            All
         }
     }
 }
