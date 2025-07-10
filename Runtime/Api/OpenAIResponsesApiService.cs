@@ -52,7 +52,10 @@ namespace GPTUnity.Api
             {
                 ["model"] = model,
                 ["input"] = input,
-                ["max_tokens"] = _maxTokens
+                ["generation_config"] = new JObject
+                {
+                    ["max_tokens"] = _maxTokens
+                }
             };
 
             if (tools != null)
