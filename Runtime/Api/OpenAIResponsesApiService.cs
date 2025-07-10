@@ -42,7 +42,7 @@ namespace GPTUnity.Api
             {
                 input.Add(new JObject
                 {
-                    ["type"] = "input_text",
+                    ["type"] = "text",
                     ["role"] = msg.role, // "user", "system", etc.
                     ["text"] = msg.content
                 });
@@ -51,11 +51,13 @@ namespace GPTUnity.Api
             var requestBody = new JObject
             {
                 ["model"] = model,
-                ["input"] = input
+                ["input"] = input,
+                ["max_tokens"] = _maxTokens
             };
 
             if (tools != null)
             {
+                requestBody["tool_choice"] = "auto";
                 requestBody["tools"] = JToken.FromObject(tools);
             }
             
@@ -93,7 +95,7 @@ namespace GPTUnity.Api
                         message = new GPTMessage
                         {
                             role = "assistant",
-                            content = parsed.output_text
+                            content = parsed.output?.text
                         },
                         finish_reason = FinishReason.stop
                     }
@@ -128,7 +130,12 @@ namespace GPTUnity.Api
             public string @object { get; set; }
             public string model { get; set; }
             public long created { get; set; }
-            public string output_text { get; set; }
+            public ResponseOutput output { get; set; }
+        }
+
+        public class ResponseOutput
+        {
+            public string text { get; set; }
         }
     }
 }

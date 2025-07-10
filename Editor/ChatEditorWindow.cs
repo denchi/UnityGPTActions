@@ -355,7 +355,7 @@ public partial class ChatEditorWindow : EditorWindow
         SetState(State.Running);
         
         // var client = new HttpClient();
-        // var url = "https://api.openai.com/v1/chat/completions";
+        // var url = "https://api.openai.com/v1/responses";
         // var messages = _messages.ChatHistory;
         // var requestBody = new
         // {
@@ -851,7 +851,7 @@ public partial class ChatEditorWindow : EditorWindow
             throw new Exception($"OpenAI key is not set. Please set the OPENAI_API_KEY environment variable.");
         }
         
-        _api = new LegacyOpenAIApiService(key: apiKey);
+        _api = new ResponsesOpenAIApiService(key: apiKey);
         _imagesApi = new OpenAIImageServiceApi(key: apiKey);
     }
     
