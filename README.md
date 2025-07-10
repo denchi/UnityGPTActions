@@ -18,6 +18,8 @@ This package is tested with **Unity 2021.2.3f1** and newer.
 - Tools to create or modify assets, scripts and shaders
 - Retrieve project information like tags, layers and packages
 - Automate common Unity workflows directly from the chat
+- Utilizes the new OpenAI `/responses` endpoint for improved results
+- Implementation in `Runtime/Api/OpenAIResponsesApiService.cs`
 
 ## Installation
 
