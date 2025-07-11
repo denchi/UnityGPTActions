@@ -51,6 +51,7 @@ namespace GPTUnity.Helpers
 
                                               "Before creating new objects - check for their presence in the scene\n" +
                                               "Do not leave prefabs active in scene\n" +
+                                              "Do not create editor scripts to do something you can not do unless the user agrees.\n" +
 
                                               "Continue executing tool calls until the user’s full request is satisfied and the scene is functional.\n" +
                                               "First thing elaborate a detailed plan of what needs to be done then execute all the tools one by one!\n" +
