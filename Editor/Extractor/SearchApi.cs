@@ -15,7 +15,7 @@ namespace GPTUnity.Indexing
     public class DeepSearchClient : IIndexingServiceApi
     {
         private const string PackageId = "com.deathbygravitystudio.gptactions";
-        private const string SearchApiScript = "Packages/" + PackageId + "/Editor/Extractor/search_api.py";
+        // private const string SearchApiScript = "Packages/" + PackageId + "/Editor/Extractor/search_api.py";
         
         private readonly string _host;
         private readonly string _pythonExe;
@@ -44,8 +44,11 @@ namespace GPTUnity.Indexing
                 Debug.Log("[DeepSearchClient] Search server is already running.");
                 return false;
             }
+            
+            var packageRoot = Path.GetFullPath($"Packages/{PackageId}");
+            var searchApiScript = Path.Combine(packageRoot, "Editor/Extractor/search_api.py");
 
-            var startInfo = new ProcessStartInfo(_pythonExe, $"\"{SearchApiScript}\"")
+            var startInfo = new ProcessStartInfo(_pythonExe, $"\"{searchApiScript}\"")
             {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
