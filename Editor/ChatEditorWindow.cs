@@ -12,6 +12,7 @@ using GPTUnity.Actions.Interfaces;
 using GPTUnity.Api;
 using GPTUnity.Data;
 using GPTUnity.Helpers;
+using GPTUnity.Indexing;
 using GPTUnity.Settings;
 using Newtonsoft.Json;
 
@@ -36,10 +37,13 @@ public partial class ChatEditorWindow : EditorWindow
     private IconsHelpers _iconsHelpers = new IconsHelpers();
     private IGPTServiceApi _api;
     private IImageServiceApi _imagesApi;
+    private IIndexingServiceApi _indexingApi;
     private bool _didForceStop = false;
     private string _currentModel = "gpt-4.1-mini";
     private State _state;
-    
+
+    public IIndexingServiceApi SearchApiClient => _indexingApi;
+
     #region Unity Editor Window
 
     [MenuItem("Window/AI Chat")]
@@ -74,6 +78,12 @@ public partial class ChatEditorWindow : EditorWindow
         
         if (_messagesScrollView != null)
             _lastScrollOffset = _messagesScrollView.scrollOffset;
+
+        if (_indexingApi != null)
+        {
+            _indexingApi.StopSearchServer();
+            _indexingApi = null;
+        }
     }
 
     #endregion
@@ -186,6 +196,11 @@ public partial class ChatEditorWindow : EditorWindow
                 if (action is IGPTActionThatRequiresImagesApi actionThatRequiresApi)
                 {
                     actionThatRequiresApi.Images = _imagesApi;
+                }
+                
+                if (action is IGPTActionThatRequiresIndexingApi actionThatRequiresIndexingApi)
+                {
+                    actionThatRequiresIndexingApi.Indexing = _indexingApi;
                 }
                     
                 if (!_toolCalls.IsToolCallExecuted(toolCall))
@@ -468,6 +483,11 @@ public partial class ChatEditorWindow : EditorWindow
             if (action is IGPTActionThatRequiresImagesApi actionThatRequiresApi)
             {
                 actionThatRequiresApi.Images = _imagesApi;
+            }
+            
+            if (action is IGPTActionThatRequiresIndexingApi actionThatRequiresIndexingApi)
+            {
+                actionThatRequiresIndexingApi.Indexing = _indexingApi;
             }
             
             var toolMessage = new GPTMessage
@@ -853,6 +873,7 @@ public partial class ChatEditorWindow : EditorWindow
         
         _api = new LegacyOpenAIApiService(key: apiKey);
         _imagesApi = new OpenAIImageServiceApi(key: apiKey);
+        _indexingApi = new DeepSearchClient(ChatSettings.instance.SearchApiHost, ChatSettings.instance.SearchApiPythonPath);
     }
     
     private bool CheckApiKeysProvided()
