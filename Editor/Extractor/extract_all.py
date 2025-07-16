@@ -3,6 +3,7 @@ from extractors.csharp_extractor import extract_csharp_chunks
 #from extractors.prefab_scene_extractor import extract_yaml_objects
 #from extractors.docs_extractor import extract_markdown_chunks
 from utils.path_utils import make_unity_relative
+#from build_tree_sitter import build_tree_sitter
 
 SUPPORTED_EXTENSIONS = {
     '.cs': extract_csharp_chunks,
@@ -45,6 +46,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default="./data/processed/chunks.json", help="Output JSON path for chunks.")
 
     args = parser.parse_args()
+
+    #build_tree_sitter()  # Ensure tree-sitter is built
+    
     chunks = extract_all(args.project)
 
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

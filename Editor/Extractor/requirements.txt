@@ -3,3 +3,4 @@ faiss-cpu==1.7.4
 fastapi==0.110.0
 uvicorn==0.27.1
 numpy==1.24.4
+tree_sitter==0.20.4

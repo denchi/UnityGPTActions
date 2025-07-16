@@ -17,46 +17,103 @@ namespace DeathByGravity.GPTActions
         public static void RunExtractor(ChatSettings settings)
         {
             string pythonExe = settings.SearchApiPythonPath;
-            string extractorPath = Path.GetFullPath(
-                "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
-            );
 
-            if (!File.Exists(extractorPath))
-            {
-                Debug.LogError("Extractor script not found at: " + extractorPath);
+            if (!BuildTreePath()) 
                 return;
+
+            RunExtractor();
+
+            bool BuildTreePath()
+            {
+                string buildTreePath = Path.GetFullPath(
+                    "Packages/com.DeathByGravityStudio.GPTActions/Editor/Extractor/extractors/build_tree_sitter.py"
+                );
+            
+                string buildTreeDir = Path.GetFullPath(
+                    "Packages/com.DeathByGravityStudio.GPTActions/Editor/Extractor/extractors"
+                );
+            
+                if (!File.Exists(buildTreePath))
+                {
+                    Debug.LogError("Build Tree Sitter script not found at: " + buildTreePath);
+                    return false;
+                }
+            
+                string args = $"\"{buildTreePath}\"";
+                ProcessStartInfo startInfo = new ProcessStartInfo(pythonExe, args)
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Path.GetFullPath(buildTreeDir) // Set the working directory to the script's location
+                };
+            
+                Process process = new Process();
+                process.StartInfo = startInfo;
+
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Debug.Log("[Extractor] " + e.Data);
+                };
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Debug.LogError("[Extractor ERROR] " + e.Data);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                Debug.Log($"Started extraction process:\n{pythonExe} {args}");
+                return true;
             }
 
-            string assetsPath = Application.dataPath;
-            string args = $"\"{extractorPath}\" --project \"{assetsPath}\"";
-
-            ProcessStartInfo startInfo = new ProcessStartInfo(pythonExe, args)
+            void RunExtractor()
             {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
+                string extractorPath = Path.GetFullPath(
+                    "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
+                );
 
-            Process process = new Process();
-            process.StartInfo = startInfo;
+                if (!File.Exists(extractorPath))
+                {
+                    Debug.LogError("Extractor script not found at: " + extractorPath);
+                    return;
+                }
 
-            process.OutputDataReceived += (sender, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    Debug.Log("[Extractor] " + e.Data);
-            };
-            process.ErrorDataReceived += (sender, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    Debug.LogError("[Extractor ERROR] " + e.Data);
-            };
+                string assetsPath = Application.dataPath;
+                var args = $"\"{extractorPath}\" --project \"{assetsPath}\"";
 
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+                var startInfo = new ProcessStartInfo(pythonExe, args)
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
 
-            Debug.Log($"Started extraction process:\n{pythonExe} {args}");
+                var process = new Process();
+                process.StartInfo = startInfo;
+
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Debug.Log("[Extractor] " + e.Data);
+                };
+                process.ErrorDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Debug.LogError("[Extractor ERROR] " + e.Data);
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                Debug.Log($"Started extraction process:\n{pythonExe} {args}");
+            }
         }
         
         [MenuItem("Tools/Unity Assistant/Run Indexer")]
@@ -160,7 +217,18 @@ namespace DeathByGravity.GPTActions
                     // uvicorn==0.27.1
                     // numpy==1.24.4
                     
-                    var pipInstallArgs = $"-m pip install sentence-transformers==2.7.0 faiss-cpu==1.7.4 fastapi==0.110.0 uvicorn==0.27.1 numpy==1.24.4";
+                    var pipPackages = new[]
+                    {
+                        "sentence-transformers==2.7.0",
+                        "faiss-cpu==1.7.4",
+                        "fastapi==0.110.0",
+                        "uvicorn==0.27.1",
+                        "numpy==1.24.4",
+                        "tree_sitter==0.20.4"
+                    };
+
+                    var pipInstallArgs = $"-m pip install {string.Join(" ", pipPackages)}";
+
                     var pipStartInfo = new ProcessStartInfo
                     {
                         FileName = Path.Combine(venvFolder, "bin", "python3"), // Adjust for Windows if needed
