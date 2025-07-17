@@ -1,18 +1,18 @@
 import os
 from tree_sitter import Language, Parser
 
-root = os.path.dirname(os.path.abspath(__file__))
-so_path = os.path.join(root, 'build', 'my-languages.so')
 
-if not os.path.exists(so_path):
-    raise RuntimeError(f"Missing {so_path}. Did you run build_tree_sitter.py?")
+def extract_csharp_chunks(file_path, data_path):
+    # Load the .so from your data_path
+    so_path = os.path.join(data_path, 'tree_sitter', 'my-languages.so')
 
-CSHARP_LANGUAGE = Language(so_path, 'c_sharp')
-parser = Parser()
-parser.set_language(CSHARP_LANGUAGE)
+    if not os.path.exists(so_path):
+        raise RuntimeError(f"Missing {so_path}. Did you run build_tree_sitter.py?")
 
+    CSHARP_LANGUAGE = Language(so_path, 'c_sharp')
+    parser = Parser()
+    parser.set_language(CSHARP_LANGUAGE)
 
-def extract_csharp_chunks(file_path):
     chunks = []
 
     with open(file_path, 'rb') as f:

@@ -17,6 +17,7 @@ namespace DeathByGravity.GPTActions
         public static void RunExtractor(ChatSettings settings)
         {
             string pythonExe = settings.SearchApiPythonPath;
+            string dataPath = Path.GetFullPath("data");
 
             if (!BuildTreePath()) 
                 return;
@@ -28,30 +29,29 @@ namespace DeathByGravity.GPTActions
                 string buildTreePath = Path.GetFullPath(
                     "Packages/com.DeathByGravityStudio.GPTActions/Editor/Extractor/extractors/build_tree_sitter.py"
                 );
-            
                 string buildTreeDir = Path.GetFullPath(
                     "Packages/com.DeathByGravityStudio.GPTActions/Editor/Extractor/extractors"
                 );
-            
+
                 if (!File.Exists(buildTreePath))
                 {
                     Debug.LogError("Build Tree Sitter script not found at: " + buildTreePath);
                     return false;
                 }
-            
-                string args = $"\"{buildTreePath}\"";
+
+                string args = $"\"{buildTreePath}\" --data \"{dataPath}\"";
+
                 ProcessStartInfo startInfo = new ProcessStartInfo(pythonExe, args)
                 {
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true,
-                    WorkingDirectory = Path.GetFullPath(buildTreeDir) // Set the working directory to the script's location
+                    WorkingDirectory = buildTreeDir
                 };
-            
+
                 Process process = new Process();
                 process.StartInfo = startInfo;
-
                 process.OutputDataReceived += (sender, e) =>
                 {
                     if (!string.IsNullOrEmpty(e.Data))
@@ -67,11 +67,15 @@ namespace DeathByGravity.GPTActions
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
-                Debug.Log($"Started extraction process:\n{pythonExe} {args}");
-                return true;
+                Debug.Log($"Started build process:\n{pythonExe} {args}");
+
+                // Wait for the process to exit before returning
+                process.WaitForExit();
+
+                return process.ExitCode == 0;
             }
 
-            void RunExtractor()
+            bool RunExtractor()
             {
                 string extractorPath = Path.GetFullPath(
                     "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
@@ -80,11 +84,11 @@ namespace DeathByGravity.GPTActions
                 if (!File.Exists(extractorPath))
                 {
                     Debug.LogError("Extractor script not found at: " + extractorPath);
-                    return;
+                    return false;
                 }
 
                 string assetsPath = Application.dataPath;
-                var args = $"\"{extractorPath}\" --project \"{assetsPath}\"";
+                var args = $"\"{extractorPath}\" --project \"{assetsPath}\" --data \"{dataPath}\"";
 
                 var startInfo = new ProcessStartInfo(pythonExe, args)
                 {
@@ -113,6 +117,11 @@ namespace DeathByGravity.GPTActions
                 process.BeginErrorReadLine();
 
                 Debug.Log($"Started extraction process:\n{pythonExe} {args}");
+                
+                // Wait for the process to exit before returning
+                process.WaitForExit();
+
+                return process.ExitCode == 0;
             }
         }
         
