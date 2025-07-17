@@ -17,112 +17,49 @@ namespace DeathByGravity.GPTActions
         public static void RunExtractor(ChatSettings settings)
         {
             string pythonExe = settings.SearchApiPythonPath;
-            string dataPath = Path.GetFullPath("data");
+            string extractorPath = Path.GetFullPath(
+                "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
+            );
 
-            if (!BuildTreePath()) 
+            if (!File.Exists(extractorPath))
+            {
+                Debug.LogError("[Indexer] " + "Extractor script not found at: " + extractorPath);
                 return;
-
-            RunExtractor();
-
-            bool BuildTreePath()
-            {
-                string buildTreePath = Path.GetFullPath(
-                    "Packages/com.DeathByGravityStudio.GPTActions/Editor/Extractor/extractors/build_tree_sitter.py"
-                );
-                string buildTreeDir = Path.GetFullPath(
-                    "Packages/com.DeathByGravityStudio.GPTActions/Editor/Extractor/extractors"
-                );
-
-                if (!File.Exists(buildTreePath))
-                {
-                    Debug.LogError("Build Tree Sitter script not found at: " + buildTreePath);
-                    return false;
-                }
-
-                string args = $"\"{buildTreePath}\" --data \"{dataPath}\"";
-
-                ProcessStartInfo startInfo = new ProcessStartInfo(pythonExe, args)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    WorkingDirectory = buildTreeDir
-                };
-
-                Process process = new Process();
-                process.StartInfo = startInfo;
-                process.OutputDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                        Debug.Log("[Extractor] " + e.Data);
-                };
-                process.ErrorDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                        Debug.LogError("[Extractor ERROR] " + e.Data);
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-
-                Debug.Log($"Started build process:\n{pythonExe} {args}");
-
-                // Wait for the process to exit before returning
-                process.WaitForExit();
-
-                return process.ExitCode == 0;
             }
 
-            bool RunExtractor()
+            string assetsPath = Application.dataPath;
+            
+            string dataPath = Path.GetFullPath("Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/prebuilt");
+            if (!Directory.Exists(dataPath))
             {
-                string extractorPath = Path.GetFullPath(
-                    "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
-                );
-
-                if (!File.Exists(extractorPath))
-                {
-                    Debug.LogError("Extractor script not found at: " + extractorPath);
-                    return false;
-                }
-
-                string assetsPath = Application.dataPath;
-                var args = $"\"{extractorPath}\" --project \"{assetsPath}\" --data \"{dataPath}\"";
-
-                var startInfo = new ProcessStartInfo(pythonExe, args)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                var process = new Process();
-                process.StartInfo = startInfo;
-
-                process.OutputDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                        Debug.Log("[Extractor] " + e.Data);
-                };
-                process.ErrorDataReceived += (sender, e) =>
-                {
-                    if (!string.IsNullOrEmpty(e.Data))
-                        Debug.LogError("[Extractor ERROR] " + e.Data);
-                };
-
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-
-                Debug.Log($"Started extraction process:\n{pythonExe} {args}");
-                
-                // Wait for the process to exit before returning
-                process.WaitForExit();
-
-                return process.ExitCode == 0;
+                Debug.LogError("[Indexer] " + "Extractor script not found at: " + extractorPath);
+                return;
             }
+
+            var args = $"\"{extractorPath}\" --project \"{assetsPath}\" --data \"{dataPath}\"";
+
+            var startInfo = new ProcessStartInfo(pythonExe, args)
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            var process = new Process();
+            process.StartInfo = startInfo;
+
+            process.OutputDataReceived += Log;
+            process.ErrorDataReceived += LogError;
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            Debug.Log($"[Indexer] " + "Started extraction process:\n{pythonExe} {args}");
+            
+            // Wait for the process to exit before returning
+            process.WaitForExit();
         }
         
         [MenuItem("Tools/Unity Assistant/Run Indexer")]
@@ -135,7 +72,7 @@ namespace DeathByGravity.GPTActions
 
             if (!File.Exists(extractorPath))
             {
-                Debug.LogError("Extractor script not found at: " + extractorPath);
+                Debug.LogError("[Indexer] " + "Extractor script not found at: " + extractorPath);
                 return;
             }
 
@@ -153,22 +90,14 @@ namespace DeathByGravity.GPTActions
             Process process = new Process();
             process.StartInfo = startInfo;
 
-            process.OutputDataReceived += (sender, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    Debug.Log("[Indexer] " + e.Data);
-            };
-            process.ErrorDataReceived += (sender, e) =>
-            {
-                if (!string.IsNullOrEmpty(e.Data))
-                    Debug.LogError("[Indexer ERROR] " + e.Data);
-            };
+            process.OutputDataReceived += Log;
+            process.ErrorDataReceived += LogError;
 
             process.Start();
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            Debug.Log($"Started indexing process:\n{pythonExe} {args}");
+            Debug.Log($"[Indexer] " + "Started indexing process:\n{pythonExe} {args}");
         }
 
         // [MenuItem("Tools/Unity Assistant/Start Server")]
@@ -203,16 +132,8 @@ namespace DeathByGravity.GPTActions
 
                     using (var process = Process.Start(startInfo))
                     {
-                        process.OutputDataReceived += (sender, e) =>
-                        {
-                            if (!string.IsNullOrEmpty(e.Data))
-                                Debug.Log("[Python venv] " + e.Data);
-                        };
-                        process.ErrorDataReceived += (sender, e) =>
-                        {
-                            if (!string.IsNullOrEmpty(e.Data))
-                                Debug.LogError("[Python venv ERROR] " + e.Data);
-                        };
+                        process.OutputDataReceived += Log;
+                        process.ErrorDataReceived += LogError;
 
                         process.BeginOutputReadLine();
                         process.BeginErrorReadLine();
@@ -250,33 +171,44 @@ namespace DeathByGravity.GPTActions
                     
                     using (var pipProcess = Process.Start(pipStartInfo))
                     {
-                        pipProcess.OutputDataReceived += (sender, e) =>
-                        {
-                            if (!string.IsNullOrEmpty(e.Data))
-                                Debug.Log("[Pip Install] " + e.Data);
-                        };
-                        pipProcess.ErrorDataReceived += (sender, e) =>
-                        {
-                            if (!string.IsNullOrEmpty(e.Data))
-                                Debug.LogError("[Pip Install ERROR] " + e.Data);
-                        };
+                        pipProcess.OutputDataReceived += Log;
+                        pipProcess.ErrorDataReceived += LogError;
 
                         pipProcess.BeginOutputReadLine();
                         pipProcess.BeginErrorReadLine();
                         pipProcess.WaitForExit();
                     }
                     
-                    Debug.Log($"VirtualEnv created at {venvFolder}");
+                    Debug.Log($"[Indexer] " + "VirtualEnv created at {venvFolder}");
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Failed to create Python environment: {e.Message}");
+                    Debug.LogError($"[Indexer] " + "Failed to create Python environment: {e.Message}");
                 }
             }
             else
             {
-                Debug.LogWarning("Python environment already exists or path is invalid.");
+                Debug.LogWarning("[Indexer] " + "Python environment already exists or path is invalid.");
             }
+        }
+        
+        private static void Log(object sender, DataReceivedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.Data))
+                return;
+                
+            Debug.Log("[Indexer] " + e.Data);
+        }
+    
+        private static void LogError(object sender, DataReceivedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.Data))
+                return;
+                
+            if (e.Data.ToLower().Contains("warn"))
+                Debug.LogWarning("[Indexer] " + e.Data);
+            else
+                Debug.LogError("[Indexer] " + e.Data);
         }
     }
 }

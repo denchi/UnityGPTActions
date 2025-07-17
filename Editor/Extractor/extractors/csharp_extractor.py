@@ -4,7 +4,7 @@ from tree_sitter import Language, Parser
 
 def extract_csharp_chunks(file_path, data_path):
     # Load the .so from your data_path
-    so_path = os.path.join(data_path, 'tree_sitter', 'my-languages.so')
+    so_path = os.path.join(data_path, 'my-languages.so')
 
     if not os.path.exists(so_path):
         raise RuntimeError(f"Missing {so_path}. Did you run build_tree_sitter.py?")
