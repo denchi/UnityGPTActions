@@ -57,6 +57,22 @@ namespace GPTUnity.Actions
             {
                 property.SetValue(this, value);
             }
+            
+            // if the type is an object
+            else if (property.PropertyType.IsClass && !string.IsNullOrEmpty(argumentValue))
+            {
+                // Attempt to deserialize the argument value into the property type
+                try
+                {
+                    var deserializedValue = JsonUtility.FromJson(argumentValue, property.PropertyType);
+                    property.SetValue(this, deserializedValue);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Failed to deserialize '{argumentValue}' into {property.PropertyType.Name}: {ex.Message}");
+                }
+            }
+            
             // else if (property.PropertyType.IsArray && Enum.TryParse(property.PropertyType, argumentValue, out var value))
             // {
             //     property.SetValue(this, value);
