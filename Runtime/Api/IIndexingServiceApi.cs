@@ -21,6 +21,7 @@ namespace GPTUnity.Indexing
         public string type;
         public string name;
         public string content;
+        public string className;
     }
 
     [Serializable]

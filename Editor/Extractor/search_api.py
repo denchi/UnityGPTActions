@@ -37,6 +37,7 @@ class SearchResult(BaseModel):
     type: str
     name: str
     content: str
+    className: str
 
 # simple get request returning true
 @app.get("/ping", tags=["Health Check"])
@@ -57,7 +58,8 @@ def search(request: SearchRequest):
                 file=item["file"],
                 type=item["type"],
                 name=item["name"],
-                content=item["content"]
+                className=item.get("class", ""),            
+                content=item["content"],
             ))
 
     return results

@@ -39,7 +39,10 @@ namespace GPTUnity.Actions
                 //     snippet = snippet.Substring(0, 300) + "...";
                 
                 sb.AppendLine("<b>Path:</b> " + EscapeRich(result.file));
-                sb.AppendLine("<b>Name:</b> " + EscapeRich(result.name) + " <b>| Type:</b> " + EscapeRich(result.type));
+                sb.AppendLine("<b>Type:</b> " + EscapeRich(result.type));
+                sb.AppendLine("<b>Name:</b> " + EscapeRich(result.name));
+                if (!string.IsNullOrEmpty(result.className))
+                    sb.AppendLine("<b>Class:</b> " + EscapeRich(result.className));
                 sb.AppendLine(HighlightCSharp(snippet));
                 sb.AppendLine("\n");
             }

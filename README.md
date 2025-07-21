@@ -11,6 +11,10 @@ This package is tested with **Unity 2021.2.3f1** and newer.
 - [Installation](#installation)
 - [Usage](#usage)
 - [Actions](#actions)
+- [Indexing](#indexing)
+- [Deep Search](#deep-search)
+- [Folders & Config](#folders--config)
+- [cURL Test](#curl-test)
 
 ## Features
 
@@ -92,3 +96,31 @@ The extension exposes the following actions:
 - [ToggleGameObjectActiveStateAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ToggleGameObjectActiveStateAction.cs)
 - [TransformGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/TransformGameObjectAction.cs)
 
+## Indexing
+
+The package can index your project's assets and scripts to enable fast searching and context-aware actions. Indexing is performed automatically on startup or can be triggered manually from the AI Chat window. Indexed data includes file paths, script classes, asset types, and metadata.
+
+- **Manual Indexing:** Use the "Reindex Project" button in the AI Chat window.
+- **Automatic Indexing:** Occurs on package initialization or after major asset changes.
+
+## Deep Search
+
+Deep Search allows you to query across all indexed files, folders, and scripts using natural language or keywords. This feature supports advanced filtering and can locate code, assets, or configuration files based on your prompt.
+
+- **Usage:** Enter search queries in the AI Chat window.
+- **Supported Filters:** File type, folder, class name, asset type, and more.
+
+Testing:
+``` bash
+curl -X POST http://127.0.0.1:8000/search -H "Content-Type: application/json" -d '{"query": "bullet"}'
+```
+
+Kill:
+``` bash
+kill -9 $(lsof -t -i :8000)
+```
+
+Start:
+``` bash
+python3 -m http.server 8000
+```
