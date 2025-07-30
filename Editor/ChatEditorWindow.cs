@@ -209,7 +209,7 @@ public partial class ChatEditorWindow : EditorWindow
                 }
                 else
                 {
-                    action.Result = toolMessage.content;
+                    action.Result = toolMessage.StringContent;
                     
                     AddMessageVisualElementWithData(toolMessage, action: action);
                 }
@@ -510,7 +510,7 @@ public partial class ChatEditorWindow : EditorWindow
     {
         try
         {
-            action.Result = toolMessage.content = await action.Execute();
+            action.Result = toolMessage.StringContent = await action.Execute();
                 
             AddMessageVisualElementWithData(
                 toolMessage, 
@@ -532,7 +532,7 @@ public partial class ChatEditorWindow : EditorWindow
         {
             Debug.LogWarning(ex);
             
-            action.Result = toolMessage.content = ex.FormatExceptionWithInner(null);
+            action.Result = toolMessage.StringContent = ex.FormatExceptionWithInner(null);
             
             AddMessageVisualElementWithData(
                 toolMessage, 
@@ -547,7 +547,7 @@ public partial class ChatEditorWindow : EditorWindow
         var message = new GPTMessage
         {
             role = role,
-            content = content
+            StringContent = content
         };
         
         if (toolId != null)
@@ -834,9 +834,9 @@ public partial class ChatEditorWindow : EditorWindow
     
     private static void AddNoAction(GPTMessage message, VisualElement contentElement)
     {
-        var label = new Label(message.content ?? "(Thinking...)");
+        var label = new Label(message.StringContent ?? "(Thinking...)");
         
-        if (string.IsNullOrEmpty(message.content) && message.tool_calls != null && message.tool_calls.Length > 0)
+        if (string.IsNullOrEmpty(message.StringContent) && message.tool_calls != null && message.tool_calls.Length > 0)
         {
             label.text = "Used " + string.Join(", ", message.tool_calls.Select(c => c.function.name).Distinct().Select(name => GPTAssistantAction.Highlight(name)));
         }
