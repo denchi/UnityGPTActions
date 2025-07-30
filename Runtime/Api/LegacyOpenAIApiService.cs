@@ -96,7 +96,7 @@ namespace GPTUnity.Api
                 throw new Exception("No choices returned from the model.");
             }
             
-            return JsonConvert.DeserializeObject<T>(result.choices[0].message.content);
+            return JsonConvert.DeserializeObject<T>(result.choices[0].message.StringContent);
         }
     }
 }
