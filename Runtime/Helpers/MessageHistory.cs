@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using GPTUnity.Data;
 using Newtonsoft.Json;
-using UnityEditor;
 using UnityEngine;
 
 namespace GPTUnity.Helpers
@@ -13,9 +12,6 @@ namespace GPTUnity.Helpers
     [JsonObject(MemberSerialization.OptIn)]
     public class MessageHistory
     {
-        [JsonIgnore]
-        private const string EditorPrefsKey = "AIChatHistory";
-
         [JsonProperty] 
         private List<GPTMessage> chatHistory = new();
 
@@ -28,8 +24,7 @@ namespace GPTUnity.Helpers
 
         public void Clear()
         {
-            chatHistory = new List<GPTMessage>();
-            EditorPrefs.DeleteKey(EditorPrefsKey);
+            chatHistory.Clear();
         }
 
         public void Add(GPTMessage message)
