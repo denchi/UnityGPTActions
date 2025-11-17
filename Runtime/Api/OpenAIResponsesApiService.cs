@@ -38,10 +38,17 @@ namespace GPTUnity.Api
             var client = new HttpClient();
             var url = "https://api.openai.com/v1/responses";
 
+            var serializer = JsonSerializer.Create(new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            });
+
+            var inputMessages = messages.Select(MapInputMessage).ToList();
+
             var requestBody = new JObject
             {
                 ["model"] = model,
-                ["input"] = JToken.FromObject(messages),
+                ["input"] = JToken.FromObject(inputMessages, serializer),
                 ["max_output_tokens"] = _maxTokens
             };
 
@@ -90,6 +97,43 @@ namespace GPTUnity.Api
             }
 
             return JsonConvert.DeserializeObject<T>(result.choices[0].message.StringContent);
+        }
+
+        private static JObject MapInputMessage(GPTMessage message)
+        {
+            var content = message.content?.Select(MapInputContent).ToList();
+
+            var payload = new JObject
+            {
+                ["role"] = message.role
+            };
+
+            if (content != null && content.Count > 0)
+            {
+                payload["content"] = JToken.FromObject(content);
+            }
+
+            if (!string.IsNullOrEmpty(message.tool_call_id))
+            {
+                payload["tool_call_id"] = message.tool_call_id;
+            }
+
+            if (!string.IsNullOrEmpty(message.name))
+            {
+                payload["name"] = message.name;
+            }
+
+            return payload;
+        }
+
+        private static GPTMessage.Content MapInputContent(GPTMessage.Content content)
+        {
+            return new GPTMessage.Content
+            {
+                type = content.type,
+                text = content.text,
+                input_audio = content.input_audio
+            };
         }
 
         private static GPTFunctionResponse ConvertResponse(OpenAIResponsesApiResponse response)
