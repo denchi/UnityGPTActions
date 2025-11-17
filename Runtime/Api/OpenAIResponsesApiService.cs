@@ -128,15 +128,17 @@ namespace GPTUnity.Api
 
         private static GPTMessage.Content MapInputContent(GPTMessage.Content content)
         {
+            var mappedType = content.type switch
+            {
+                "text" => "input_text",
+                _ => content.type
+            };
+
             return new GPTMessage.Content
             {
-                type = content.type switch
-                {
-                    "text" => "input_text",
-                    _ => content.type
-                },
-                text = content.text,
-                input_audio = content.input_audio
+                type = mappedType,
+                text = mappedType == "input_text" ? content.text : null,
+                input_audio = mappedType == "input_audio" ? content.input_audio : null
             };
         }
 
