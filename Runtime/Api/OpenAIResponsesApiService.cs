@@ -130,7 +130,11 @@ namespace GPTUnity.Api
         {
             return new GPTMessage.Content
             {
-                type = content.type,
+                type = content.type switch
+                {
+                    "text" => "input_text",
+                    _ => content.type
+                },
                 text = content.text,
                 input_audio = content.input_audio
             };
