@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 namespace GPTUnity.Helpers
 {
@@ -46,19 +47,25 @@ namespace GPTUnity.Helpers
 
             foreach (var assembly in assemblies)
             {
-                var types = assembly
-                    .GetTypes();
-            
-                var assignableTypes = types
-                    .Where(t => baseActionType.IsAssignableFrom(t));
-            
-                var actionTypes = assignableTypes
-                    .Where(t =>
-                        !t.IsAbstract && CustomAttributeExtensions.GetCustomAttribute<GPTActionAttribute>((MemberInfo)t) != null);
-                
-                foreach (var actionType in actionTypes)
+                try
                 {
-                    actionsDict[actionType.Name] = actionType;
+                    var types = assembly.GetTypes();
+                
+                    var assignableTypes = types
+                        .Where(t => baseActionType.IsAssignableFrom(t));
+                
+                    var actionTypes = assignableTypes
+                        .Where(t =>
+                            !t.IsAbstract && CustomAttributeExtensions.GetCustomAttribute<GPTActionAttribute>((MemberInfo)t) != null);
+                    
+                    foreach (var actionType in actionTypes)
+                    {
+                        actionsDict[actionType.Name] = actionType;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"<color=yellow>[GptTypesRegister]</color> Error scanning assembly {assembly.FullName}: {ex.Message}");
                 }
             }
 
@@ -105,15 +112,20 @@ namespace GPTUnity.Helpers
         {
             var assemblies = new List<Assembly>
             {
-                //Assembly.GetExecutingAssembly(), // this would be package assembly
-                Assembly.GetAssembly(baseActionType)
+                Assembly.GetAssembly(baseActionType) // The assembly containing the base action type
             };
             
-            // Add all assemblies in the current AppDomain
-            assemblies.AddRange(AppDomain
-                .CurrentDomain
-                .GetAssemblies()
-                .Where(assembly => !assembly.IsDynamic && assembly.FullName.StartsWith("Assembly-CSharp")));
+            // Add all relevant assemblies in the current AppDomain
+            var allAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(assembly => !assembly.IsDynamic);
+            
+            foreach (var assembly in allAssemblies)
+            {                
+                if (!assemblies.Contains(assembly))
+                {
+                    assemblies.Add(assembly);
+                }
+            }
 
             return assemblies;
         }

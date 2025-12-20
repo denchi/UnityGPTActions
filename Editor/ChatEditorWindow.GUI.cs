@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using GPTUnity.Api;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
 using UnityEditor.UIElements;
@@ -63,6 +65,7 @@ public partial class ChatEditorWindow
                 var menu = new UnityEditor.GenericMenu();
                 menu.AddItem(new GUIContent("Copy Chat"), false, OnButtonCopyHistoryClicked);
                 menu.AddItem(new GUIContent("Paste Chat"), false, OnButtonPasteHistoryClicked);
+                menu.AddItem(new GUIContent("Refresh Models"), false, OnRefreshModelsClicked);
                 menu.AddItem(new GUIContent("Rebuild UI"), false, CreateGUI);
                 menu.DropDown(menuLabel.worldBound);
             }
@@ -326,6 +329,32 @@ public partial class ChatEditorWindow
         container.Add(card);
 
         rootVisualElement.Add(container);
+    }
+
+    private async void OnRefreshModelsClicked()
+    {
+        if (_api is LegacyOpenAIApiService legacyApi)
+        {
+            try
+            {
+                await legacyApi.FetchAvailableModelsAsync();
+                if (_modelDropdown != null)
+                {
+                    _modelDropdown.choices = _api.Models.ToList();
+                    // Ensure current model is still valid, otherwise reset to first available
+                    if (!_api.Models.Contains(_currentModel))
+                    {
+                        _currentModel = _api.Models.FirstOrDefault() ?? "gpt-4o";
+                        _modelDropdown.value = _currentModel;
+                    }
+                }
+                // Debug.Log($"Models refreshed. Available models: {string.Join(", ", _api.Models)}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to refresh models: {ex.Message}");
+            }
+        }
     }
 
     #endregion

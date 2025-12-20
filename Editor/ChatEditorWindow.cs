@@ -39,7 +39,7 @@ public partial class ChatEditorWindow : EditorWindow
     private IImageServiceApi _imagesApi;
     private IIndexingServiceApi _indexingApi;
     private bool _didForceStop = false;
-    private string _currentModel = "gpt-4.1-mini";
+    private string _currentModel = "gpt-5";
     private State _state;
 
     public IIndexingServiceApi SearchApiClient => _indexingApi;
@@ -54,13 +54,10 @@ public partial class ChatEditorWindow : EditorWindow
 
     private void OnEnable()
     {
-        Debug.Log("===OnEnable===");
     }
 
     private void OnDisable()
     {
-        Debug.Log("===OnDisable===");
-        
         var fields = GetType()
             .GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(f => f.GetCustomAttributes(typeof(SerializeGptEditorFieldAttribute), true).Any());
@@ -71,7 +68,6 @@ public partial class ChatEditorWindow : EditorWindow
             var deserializedValue = field.GetValue(this); 
             var value = JsonConvert.SerializeObject(deserializedValue);
             EditorPrefs.SetString(field.Name, value);
-            Debug.Log($"Saved value for {field.Name} = {value}");
         }
         
         //_messageHistory.Save();
@@ -395,6 +391,12 @@ public partial class ChatEditorWindow : EditorWindow
         {
             _requestSent = true;
             _requestReceived = false;
+            
+            // Debug.Log($"<color=cyan>[ChatWindow]</color> Sending request with {_gptTypesRegister.Tools?.Length ?? 0} tools");
+            // if (_gptTypesRegister.Tools != null && _gptTypesRegister.Tools.Length > 0)
+            // {
+            //     Debug.Log($"<color=cyan>[ChatWindow]</color> First tool: {JsonConvert.SerializeObject(_gptTypesRegister.Tools[0])}");
+            // }
             
             var responseData = await _api.Chat(_messages.ChatHistory, _currentModel, _gptTypesRegister.Tools);
             
@@ -874,6 +876,40 @@ public partial class ChatEditorWindow : EditorWindow
         _api = new LegacyOpenAIApiService(key: apiKey);
         _imagesApi = new OpenAIImageServiceApi(key: apiKey);
         _indexingApi = new DeepSearchClient(ChatSettings.instance.SearchApiHost, ChatSettings.instance.SearchApiPythonPath);
+        
+        // Fetch available models asynchronously
+        _ = FetchModelsAsync();
+    }
+    
+    private async Task FetchModelsAsync()
+    {
+        //Debug.Log("Fetching available models from OpenAI...");
+        try
+        {
+            if (_api is LegacyOpenAIApiService legacyApi)
+            {
+                await legacyApi.FetchAvailableModelsAsync();
+                // Update the dropdown if it exists
+                if (_modelDropdown != null)
+                {
+                    UnityEditor.EditorApplication.delayCall += () =>
+                    {
+                        _modelDropdown.choices = _api.Models.ToList();
+                        // Ensure current model is still valid, otherwise reset to first available
+                        if (!_api.Models.Contains(_currentModel))
+                        {
+                            _currentModel = _api.Models.FirstOrDefault() ?? "gpt-4o";
+                            _modelDropdown.value = _currentModel;
+                        }
+                        //Debug.Log($"Model dropdown updated with {_api.Models.Count} models: {string.Join(", ", _api.Models)}");
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"Failed to fetch OpenAI models: {ex.Message}");
+        }
     }
     
     private bool CheckApiKeysProvided()
@@ -917,10 +953,11 @@ public partial class ChatEditorWindow : EditorWindow
                 var deserializedValue = JsonConvert.DeserializeObject(value, field.FieldType);
                 field.SetValue(this, deserializedValue);
                 
-                Debug.Log($"Restored value for {field.Name} = {value}");
+                //Debug.Log($"Restored value for {field.Name} = {value}");
             }
         }
         
+        //Debug.Log($"<color=magenta>[GptTypesRegister]</color> Initialized with {_gptTypesRegister.Tools?.Length ?? 0} tools");
         _gptActionsFactory.Init(_gptTypesRegister);
     }
 }
