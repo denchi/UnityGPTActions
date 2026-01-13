@@ -873,7 +873,7 @@ public partial class ChatEditorWindow : EditorWindow
             throw new Exception($"OpenAI key is not set. Please set the OPENAI_API_KEY environment variable.");
         }
         
-        _api = new LegacyOpenAIApiService(key: apiKey);
+        _api = new OpenAIResponsesApiService(key: apiKey);
         _imagesApi = new OpenAIImageServiceApi(key: apiKey);
         _indexingApi = new DeepSearchClient(ChatSettings.instance.SearchApiHost, ChatSettings.instance.SearchApiPythonPath);
         
