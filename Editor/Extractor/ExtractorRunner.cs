@@ -114,15 +114,72 @@ namespace DeathByGravity.GPTActions
         
         public static void TryCreatePythonEnvironment(string pythonPath)
         {
-            var venvFolder = Path.Combine(Directory.GetParent(pythonPath).Parent.FullName); // This should point to /venv
+            CreateOrUpdatePythonEnvironment(
+                pythonPath,
+                defaultVenvName: "venv",
+                packages: new[]
+                {
+                    "sentence-transformers==2.7.0",
+                    "faiss-cpu==1.7.4",
+                    "fastapi==0.110.0",
+                    "uvicorn==0.27.1",
+                    "numpy==1.24.4",
+                    "tree_sitter==0.20.4"
+                },
+                requirePython310: false,
+                includeMcp: false);
+        }
 
-            if (!string.IsNullOrEmpty(venvFolder) && !Directory.Exists(venvFolder))
+        public static void TryCreateMcpEnvironment(string pythonPath)
+        {
+            CreateOrUpdatePythonEnvironment(
+                pythonPath,
+                defaultVenvName: "venv_mcp",
+                packages: new[]
+                {
+                    "mcp==1.0.0",
+                    "uvicorn==0.27.1"
+                },
+                requirePython310: true,
+                includeMcp: true);
+        }
+
+        private static void CreateOrUpdatePythonEnvironment(
+            string pythonPath,
+            string defaultVenvName,
+            string[] packages,
+            bool requirePython310,
+            bool includeMcp)
+        {
+            if (string.IsNullOrWhiteSpace(pythonPath))
             {
-                try
+                Debug.LogError("[Indexer] Python path is empty.");
+                return;
+            }
+
+            var pythonFile = ResolvePythonExecutable(pythonPath);
+            if (!IsSimpleExecutableName(pythonFile) && !File.Exists(pythonFile))
+            {
+                Debug.LogWarning($"[Indexer] Python path not found: {pythonFile}. Falling back to 'python3'.");
+                pythonFile = "python3";
+            }
+            var venvFolder = ResolveVenvFolder(pythonPath, defaultVenvName);
+
+            if (string.IsNullOrEmpty(venvFolder))
+            {
+                Debug.LogError("[Indexer] Invalid Python path. Expected something like venv/bin/python3 or python3.11.");
+                return;
+            }
+
+            var shouldCreateVenv = !Directory.Exists(venvFolder);
+
+            try
+            {
+                if (shouldCreateVenv)
                 {
                     var startInfo = new ProcessStartInfo
                     {
-                        FileName = "python3", // or "python" on Windows
+                        FileName = pythonFile,
                         Arguments = $"-m venv \"{venvFolder}\"",
                         UseShellExecute = false,
                         RedirectStandardOutput = true,
@@ -139,57 +196,127 @@ namespace DeathByGravity.GPTActions
                         process.BeginErrorReadLine();
                         process.WaitForExit();
                     }
-                    
-                    // Install pip packages here
-                    // sentence-transformers==2.7.0
-                    // faiss-cpu==1.7.4
-                    // fastapi==0.110.0
-                    // uvicorn==0.27.1
-                    // numpy==1.24.4
-                    
-                    var pipPackages = new[]
-                    {
-                        "sentence-transformers==2.7.0",
-                        "faiss-cpu==1.7.4",
-                        "fastapi==0.110.0",
-                        "uvicorn==0.27.1",
-                        "numpy==1.24.4",
-                        "tree_sitter==0.20.4"
-                    };
-
-                    var pipInstallArgs = $"-m pip install {string.Join(" ", pipPackages)}";
-
-                    var pipStartInfo = new ProcessStartInfo
-                    {
-                        FileName = Path.Combine(venvFolder, "bin", "python3"), // Adjust for Windows if needed
-                        Arguments = pipInstallArgs,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    };
-                    
-                    using (var pipProcess = Process.Start(pipStartInfo))
-                    {
-                        pipProcess.OutputDataReceived += Log;
-                        pipProcess.ErrorDataReceived += LogError;
-
-                        pipProcess.BeginOutputReadLine();
-                        pipProcess.BeginErrorReadLine();
-                        pipProcess.WaitForExit();
-                    }
-                    
-                    Debug.Log($"[Indexer] " + "VirtualEnv created at {venvFolder}");
                 }
-                catch (Exception e)
+
+                var venvPython = ResolveVenvPython(pythonPath, venvFolder);
+                if (requirePython310 && !PythonSupportsMcp(venvPython))
                 {
-                    Debug.LogError($"[Indexer] " + "Failed to create Python environment: {e.Message}");
+                    Debug.LogWarning("[Indexer] MCP requires Python >= 3.10. Configure MCP Python Path to a 3.10+ interpreter.");
+                    return;
+                }
+
+                var pipPackages = new System.Collections.Generic.List<string>(packages);
+                if (includeMcp && !pipPackages.Contains("mcp==1.0.0"))
+                {
+                    pipPackages.Add("mcp==1.0.0");
+                }
+
+                var pipInstallArgs = $"-m pip install {string.Join(" ", pipPackages)}";
+
+                var pipStartInfo = new ProcessStartInfo
+                {
+                    FileName = venvPython,
+                    Arguments = pipInstallArgs,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var pipProcess = Process.Start(pipStartInfo))
+                {
+                    pipProcess.OutputDataReceived += Log;
+                    pipProcess.ErrorDataReceived += LogError;
+
+                    pipProcess.BeginOutputReadLine();
+                    pipProcess.BeginErrorReadLine();
+                    pipProcess.WaitForExit();
+                }
+
+                var status = shouldCreateVenv ? "created and configured" : "updated";
+                Debug.Log($"[Indexer] Python environment {status} at {venvFolder}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Indexer] Failed to configure Python environment: {e.Message}");
+            }
+        }
+
+        private static bool PythonSupportsMcp(string pythonFile)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = pythonFile,
+                    Arguments = "-c \"import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    process.WaitForExit();
+                    var output = process.StandardOutput.ReadToEnd().Trim();
+                    if (string.IsNullOrEmpty(output))
+                        return false;
+
+                    if (Version.TryParse(output, out var version))
+                    {
+                        return version.Major > 3 || (version.Major == 3 && version.Minor >= 10);
+                    }
                 }
             }
-            else
+            catch
             {
-                Debug.LogWarning("[Indexer] " + "Python environment already exists or path is invalid.");
+                return false;
             }
+
+            return false;
+        }
+
+        private static string ResolvePythonExecutable(string pythonPath)
+        {
+            if (IsSimpleExecutableName(pythonPath))
+                return pythonPath;
+
+            return Path.GetFullPath(pythonPath);
+        }
+
+        private static string ResolveVenvFolder(string pythonPath, string defaultVenvName)
+        {
+            if (IsSimpleExecutableName(pythonPath))
+            {
+                return Path.GetFullPath(defaultVenvName);
+            }
+
+            var pythonFile = Path.GetFullPath(pythonPath);
+            var pythonDir = Directory.GetParent(pythonFile);
+            return pythonDir?.Parent?.FullName;
+        }
+
+        private static string ResolveVenvPython(string pythonPath, string venvFolder)
+        {
+            if (IsSimpleExecutableName(pythonPath))
+            {
+                return Path.Combine(venvFolder, "bin", "python3");
+            }
+            
+            var resolved = Path.GetFullPath(pythonPath);
+            if (resolved.StartsWith(venvFolder, StringComparison.Ordinal) && !File.Exists(resolved))
+            {
+                return Path.Combine(venvFolder, "bin", "python3");
+            }
+
+            return resolved;
+        }
+
+        private static bool IsSimpleExecutableName(string pythonPath)
+        {
+            return pythonPath.IndexOf(Path.DirectorySeparatorChar) == -1 &&
+                   pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
         }
         
         private static void Log(object sender, DataReceivedEventArgs e)
