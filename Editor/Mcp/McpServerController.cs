@@ -89,7 +89,7 @@ namespace Mcp
 
             if (!IsPortAvailable(host, port))
             {
-                Debug.LogError($"[MCP] Port {port} is already in use. Stop the existing MCP server or change the port.");
+                Debug.LogWarning($"[MCP] Port {port} is already in use. Maybe server is already running?");
                 return;
             }
 

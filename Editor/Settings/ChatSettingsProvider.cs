@@ -26,6 +26,13 @@ namespace GPTUnity.Data
         private static bool _mcpStatusKnown;
         private static string _lastMcpBridgeUrl;
         private static string _lastMcpServerUrl;
+        private static bool _mcpAutoRetryEnabled;
+        private static double _mcpRetryUntil;
+
+        static ChatSettingsProvider()
+        {
+            EditorApplication.update += OnEditorUpdate;
+        }
 
         [SettingsProvider]
         public static SettingsProvider CreateSettingsProvider()
@@ -51,6 +58,8 @@ namespace GPTUnity.Data
                     EditorGUILayout.LabelField("Search API Settings", EditorStyles.boldLabel);
                     settings.SearchApiHost = EditorGUILayout.TextField("Search API Host", settings.SearchApiHost);
                     settings.SearchApiPythonPath = EditorGUILayout.TextField("Search API Python Path", settings.SearchApiPythonPath);
+                    settings.SearchApiEnvPath = EditorGUILayout.TextField("Search API Env Path", settings.SearchApiEnvPath);
+                    settings.SearchApiPythonFallback = EditorGUILayout.TextField("Search API Python Fallback", settings.SearchApiPythonFallback);
 
                     if (_lastSearchHost != settings.SearchApiHost)
                     {
@@ -72,7 +81,12 @@ namespace GPTUnity.Data
                     
                     if (GUILayout.Button("Create Python Environment"))
                     {
-                        ExtractorRunner.TryCreatePythonEnvironment(settings.SearchApiPythonPath);
+                        ExtractorRunner.TryCreatePythonEnvironment(settings.SearchApiPythonPath, settings.SearchApiEnvPath, settings.SearchApiPythonFallback);
+                    }
+                    
+                    if (GUILayout.Button("Wipe Search Environment"))
+                    {
+                        TryWipeEnvironment(settings.SearchApiEnvPath, "Search API");
                     }
                     
                     if (GUILayout.Button("Create a new index"))
@@ -111,6 +125,8 @@ namespace GPTUnity.Data
                         _mcpServerChecking,
                         _mcpStatusKnown);
                     settings.McpPythonPath = EditorGUILayout.TextField("MCP Python Path", settings.McpPythonPath);
+                    settings.McpEnvPath = EditorGUILayout.TextField("MCP Env Path", settings.McpEnvPath);
+                    settings.McpPythonFallback = EditorGUILayout.TextField("MCP Python Fallback", settings.McpPythonFallback);
                     settings.McpAutoStart = EditorGUILayout.Toggle("MCP Autostart", settings.McpAutoStart);
                     
                     if (_lastMcpBridgeUrl != settings.McpBridgeUrl || _lastMcpServerUrl != settings.McpServerUrl)
@@ -131,11 +147,27 @@ namespace GPTUnity.Data
                     {
                         EnsureMcpEnvironment(settings);
                         Mcp.McpServerController.StartAll(settings);
+                        // Trigger status refresh after start
+                        _mcpStatusKnown = false;
+                        _mcpAutoRetryEnabled = true;
+                        _mcpRetryUntil = EditorApplication.timeSinceStartup + 10.0;
                     }                                    
                     
                     if (GUILayout.Button("Stop MCP Server"))
                     {
                         Mcp.McpServerController.StopAll();
+                        // Immediately reflect offline status
+                        _mcpBridgeAvailable = false;
+                        _mcpServerAvailable = false;
+                        _mcpBridgeChecking = false;
+                        _mcpServerChecking = false;
+                        _mcpStatusKnown = true;
+                        _mcpAutoRetryEnabled = false;
+                    }
+                    
+                    if (GUILayout.Button("Wipe MCP Environment"))
+                    {
+                        TryWipeEnvironment(settings.McpEnvPath, "MCP");
                     }
                     
                     if (GUILayout.Button("Refresh MCP Status"))
@@ -268,7 +300,32 @@ namespace GPTUnity.Data
             {
                 _mcpServerChecking = false;
                 _mcpStatusKnown = true;
+                if (_mcpServerAvailable && _mcpBridgeAvailable)
+                {
+                    _mcpAutoRetryEnabled = false;
+                }
             }
+        }
+
+        private static void OnEditorUpdate()
+        {
+            if (!_mcpAutoRetryEnabled)
+                return;
+
+            if (EditorApplication.timeSinceStartup > _mcpRetryUntil)
+            {
+                _mcpAutoRetryEnabled = false;
+                return;
+            }
+
+            if (_mcpBridgeChecking || _mcpServerChecking)
+                return;
+
+            var settings = ChatSettings.instance;
+            if (settings == null)
+                return;
+
+            CheckMcpStatusAsync(settings);
         }
 
         private static void DrawStatusRow(string label, bool isOnline, bool isChecking, bool statusKnown)
@@ -333,10 +390,13 @@ namespace GPTUnity.Data
             if (settings == null)
                 return;
 
-            if (!IsPythonEnvMissing(settings.SearchApiPythonPath, "venv"))
+            if (!IsPythonEnvMissing(settings.SearchApiPythonPath, settings.SearchApiEnvPath, "venv"))
                 return;
 
-            ExtractorRunner.TryCreatePythonEnvironment(settings.SearchApiPythonPath);
+            ExtractorRunner.TryCreatePythonEnvironment(
+                settings.SearchApiPythonPath,
+                settings.SearchApiEnvPath,
+                settings.SearchApiPythonFallback);
         }
 
         private static void EnsureMcpEnvironment(ChatSettings settings)
@@ -344,13 +404,16 @@ namespace GPTUnity.Data
             if (settings == null)
                 return;
 
-            if (!IsPythonEnvMissing(settings.McpPythonPath, "venv_mcp"))
+            if (!IsPythonEnvMissing(settings.McpPythonPath, settings.McpEnvPath, "venv_mcp"))
                 return;
 
-            ExtractorRunner.TryCreateMcpEnvironment(settings.McpPythonPath);
+            ExtractorRunner.TryCreateMcpEnvironment(
+                settings.McpPythonPath,
+                settings.McpEnvPath,
+                settings.McpPythonFallback);
         }
 
-        private static bool IsPythonEnvMissing(string pythonPath, string defaultVenvName)
+        private static bool IsPythonEnvMissing(string pythonPath, string envPath, string defaultVenvName)
         {
             if (string.IsNullOrWhiteSpace(pythonPath))
                 return true;
@@ -361,7 +424,7 @@ namespace GPTUnity.Data
                 return !File.Exists(fullPath);
             }
 
-            var venvPath = Path.GetFullPath(defaultVenvName);
+            var venvPath = Path.GetFullPath(string.IsNullOrWhiteSpace(envPath) ? defaultVenvName : envPath);
             return !Directory.Exists(venvPath);
         }
 
@@ -369,6 +432,38 @@ namespace GPTUnity.Data
         {
             return pythonPath.IndexOf(Path.DirectorySeparatorChar) == -1 &&
                    pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
+        }
+
+        private static void TryWipeEnvironment(string envPath, string label)
+        {
+            var targetPath = Path.GetFullPath(string.IsNullOrWhiteSpace(envPath) ? "" : envPath);
+            if (string.IsNullOrWhiteSpace(envPath) || !Directory.Exists(targetPath))
+            {
+                EditorUtility.DisplayDialog(
+                    "Wipe Environment",
+                    $"{label} environment not found at '{targetPath}'.",
+                    "OK");
+                return;
+            }
+
+            var confirm = EditorUtility.DisplayDialog(
+                "Wipe Environment",
+                $"Delete '{targetPath}'? This cannot be undone.",
+                "Delete",
+                "Cancel");
+
+            if (!confirm)
+                return;
+
+            try
+            {
+                Directory.Delete(targetPath, true);
+                Debug.Log($"[ChatSettings] Wiped {label} environment at {targetPath}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[ChatSettings] Failed to wipe {label} environment: {e.Message}");
+            }
         }
         
         private static async void StartServerAsync(ChatSettings settings)

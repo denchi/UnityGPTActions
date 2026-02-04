@@ -112,11 +112,11 @@ namespace DeathByGravity.GPTActions
         //     DeepSearchClient.StopSearchServer();
         // }
         
-        public static void TryCreatePythonEnvironment(string pythonPath)
+        public static void TryCreatePythonEnvironment(string pythonPath, string envPath = "venv", string pythonFallback = "python3")
         {
             CreateOrUpdatePythonEnvironment(
                 pythonPath,
-                defaultVenvName: "venv",
+                defaultVenvName: envPath,
                 packages: new[]
                 {
                     "sentence-transformers==2.7.0",
@@ -127,21 +127,22 @@ namespace DeathByGravity.GPTActions
                     "tree_sitter==0.20.4"
                 },
                 requirePython310: false,
-                includeMcp: false);
+                includeMcp: false,
+                pythonFallback: pythonFallback);
         }
 
-        public static void TryCreateMcpEnvironment(string pythonPath)
+        public static void TryCreateMcpEnvironment(string pythonPath, string envPath = "venv_mcp", string pythonFallback = "python3.11")
         {
             CreateOrUpdatePythonEnvironment(
                 pythonPath,
-                defaultVenvName: "venv_mcp",
+                defaultVenvName: envPath,
                 packages: new[]
                 {
-                    "mcp==1.0.0",
-                    "uvicorn==0.27.1"
+                    "mcp==1.26.0"
                 },
                 requirePython310: true,
-                includeMcp: true);
+                includeMcp: true,
+                pythonFallback: pythonFallback);
         }
 
         private static void CreateOrUpdatePythonEnvironment(
@@ -149,7 +150,8 @@ namespace DeathByGravity.GPTActions
             string defaultVenvName,
             string[] packages,
             bool requirePython310,
-            bool includeMcp)
+            bool includeMcp,
+            string pythonFallback)
         {
             if (string.IsNullOrWhiteSpace(pythonPath))
             {
@@ -160,8 +162,9 @@ namespace DeathByGravity.GPTActions
             var pythonFile = ResolvePythonExecutable(pythonPath);
             if (!IsSimpleExecutableName(pythonFile) && !File.Exists(pythonFile))
             {
-                Debug.LogWarning($"[Indexer] Python path not found: {pythonFile}. Falling back to 'python3'.");
-                pythonFile = "python3";
+                var fallback = ResolveInterpreterFallback(requirePython310, pythonFallback);
+                Debug.LogWarning($"[Indexer] Python path not found: {pythonFile}. Falling back to '{fallback}'.");
+                pythonFile = fallback;
             }
             var venvFolder = ResolveVenvFolder(pythonPath, defaultVenvName);
 
@@ -206,9 +209,9 @@ namespace DeathByGravity.GPTActions
                 }
 
                 var pipPackages = new System.Collections.Generic.List<string>(packages);
-                if (includeMcp && !pipPackages.Contains("mcp==1.0.0"))
+                if (includeMcp && !pipPackages.Contains("mcp==1.26.0"))
                 {
-                    pipPackages.Add("mcp==1.0.0");
+                    pipPackages.Add("mcp==1.26.0");
                 }
 
                 var pipInstallArgs = $"-m pip install {string.Join(" ", pipPackages)}";
@@ -317,6 +320,97 @@ namespace DeathByGravity.GPTActions
         {
             return pythonPath.IndexOf(Path.DirectorySeparatorChar) == -1 &&
                    pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
+        }
+
+        private static string DeriveInterpreterFallback(bool requirePython310)
+        {
+            return requirePython310 ? "python3.11" : "python3";
+        }
+
+        private static string ResolveInterpreterFallback(bool requirePython310, string pythonFallback)
+        {
+            if (!string.IsNullOrWhiteSpace(pythonFallback))
+            {
+                if (IsSimpleExecutableName(pythonFallback))
+                    return pythonFallback;
+                if (File.Exists(pythonFallback))
+                    return pythonFallback;
+            }
+
+            foreach (var candidate in GetInterpreterCandidates(requirePython310))
+            {
+                if (IsSimpleExecutableName(candidate))
+                {
+                    if (TestInterpreter(candidate, requirePython310))
+                        return candidate;
+                }
+                else if (File.Exists(candidate) && TestInterpreter(candidate, requirePython310))
+                {
+                    return candidate;
+                }
+            }
+
+            return DeriveInterpreterFallback(requirePython310);
+        }
+
+        private static string[] GetInterpreterCandidates(bool requirePython310)
+        {
+            if (requirePython310)
+            {
+                return new[]
+                {
+                    "python3.11",
+                    "python3.12",
+                    "python3.10",
+                    "/opt/homebrew/bin/python3.11",
+                    "/opt/homebrew/bin/python3.12",
+                    "/usr/local/bin/python3.11",
+                    "/usr/local/bin/python3.12"
+                };
+            }
+
+            return new[]
+            {
+                "python3",
+                "python",
+                "/opt/homebrew/bin/python3",
+                "/usr/local/bin/python3"
+            };
+        }
+
+        private static bool TestInterpreter(string pythonExe, bool requirePython310)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = pythonExe,
+                    Arguments = "-c \"import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    process.WaitForExit(2000);
+                    var output = process.StandardOutput.ReadToEnd().Trim();
+                    if (string.IsNullOrEmpty(output))
+                        return false;
+
+                    if (Version.TryParse(output, out var version))
+                    {
+                        return !requirePython310 || version.Major > 3 || (version.Major == 3 && version.Minor >= 10);
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+
+            return false;
         }
         
         private static void Log(object sender, DataReceivedEventArgs e)
