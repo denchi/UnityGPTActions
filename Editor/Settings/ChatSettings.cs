@@ -13,8 +13,8 @@ namespace GPTUnity.Settings
         
         [Header("Search Api Settings")]
         [SerializeField] private string _searchApiHost = "http://127.0.0.1:8000";
-        [SerializeField] private string _searchApiPythonPath = "Library/py/search/bin/python3";
-        [SerializeField] private string _searchApiEnvPath = "Library/py/search";
+        [SerializeField] private string _searchApiPythonPath = "Library/py/mcp/bin/python3";
+        [SerializeField] private string _searchApiEnvPath = "Library/py/mcp";
         [SerializeField] private string _searchApiPythonFallback = "python3";
         
         [Header("MCP Settings")]
@@ -22,6 +22,7 @@ namespace GPTUnity.Settings
         [SerializeField] private string _mcpServerUrl = "http://127.0.0.1:7072/mcp/sse";
         [SerializeField] private string _mcpPythonPath = "Library/py/mcp/bin/python3";
         [SerializeField] private bool _mcpAutoStart = false;
+        [SerializeField] private bool _mcpUseUpdateQueue = true;
         [SerializeField] private string _mcpEnvPath = "Library/py/mcp";
         [SerializeField] private string _mcpPythonFallback = "python3.11";
 
@@ -89,6 +90,12 @@ namespace GPTUnity.Settings
         {
             get { return _mcpAutoStart; }
             set { _mcpAutoStart = value; }
+        }
+
+        public bool McpUseUpdateQueue
+        {
+            get { return _mcpUseUpdateQueue; }
+            set { _mcpUseUpdateQueue = value; }
         }
 
         public string McpEnvPath

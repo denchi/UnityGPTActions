@@ -10,8 +10,8 @@ namespace DeathByGravity.GPTActions
 {
     public static class ExtractorRunner
     {
-        // Path to your Python3 executable inside your venv
-        // private static readonly string pythonExe = "/Users/denis/dev/ChatGptAssistant/venv/bin/python3";
+        // Path to your Python3 executable inside your env
+        // private static readonly string pythonExe = "/Users/denis/dev/ChatGptAssistant/Library/py/search/bin/python3";
 
         [MenuItem("Tools/Unity Assistant/Run Extractor")]
         public static void RunExtractor(ChatSettings settings)
@@ -112,7 +112,7 @@ namespace DeathByGravity.GPTActions
         //     DeepSearchClient.StopSearchServer();
         // }
         
-        public static void TryCreatePythonEnvironment(string pythonPath, string envPath = "venv", string pythonFallback = "python3")
+        public static void TryCreatePythonEnvironment(string pythonPath, string envPath = "Library/py/mcp", string pythonFallback = "python3")
         {
             CreateOrUpdatePythonEnvironment(
                 pythonPath,
@@ -121,8 +121,8 @@ namespace DeathByGravity.GPTActions
                 {
                     "sentence-transformers==2.7.0",
                     "faiss-cpu==1.7.4",
-                    "fastapi==0.110.0",
-                    "uvicorn==0.27.1",
+                    "starlette==0.49.1",
+                    "uvicorn==0.31.1",
                     "numpy==1.24.4",
                     "tree_sitter==0.20.4"
                 },
@@ -131,7 +131,7 @@ namespace DeathByGravity.GPTActions
                 pythonFallback: pythonFallback);
         }
 
-        public static void TryCreateMcpEnvironment(string pythonPath, string envPath = "venv_mcp", string pythonFallback = "python3.11")
+        public static void TryCreateMcpEnvironment(string pythonPath, string envPath = "Library/py/mcp", string pythonFallback = "python3.11")
         {
             CreateOrUpdatePythonEnvironment(
                 pythonPath,
@@ -170,7 +170,7 @@ namespace DeathByGravity.GPTActions
 
             if (string.IsNullOrEmpty(venvFolder))
             {
-                Debug.LogError("[Indexer] Invalid Python path. Expected something like venv/bin/python3 or python3.11.");
+                Debug.LogError("[Indexer] Invalid Python path. Expected something like Library/py/search/bin/python3 or python3.11.");
                 return;
             }
 

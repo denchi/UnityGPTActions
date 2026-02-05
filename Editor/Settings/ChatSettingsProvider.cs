@@ -53,40 +53,42 @@ namespace GPTUnity.Data
                     var newColorChatBackground =
                         EditorGUILayout.ColorField("Chat Background Color", settings.ColorChatBackground);
                     
+                    // Common settings
+                    EditorGUILayout.Space();
+                    EditorGUILayout.LabelField("Common Configs", EditorStyles.boldLabel);
+                    var commonPythonPath = NormalizeLibraryPyPath(EditorGUILayout.TextField("Python Path", DenormalizeLibraryPyPath(settings.McpPythonPath)));
+                    var commonEnvPath = NormalizeLibraryPyPath(EditorGUILayout.TextField("Python Env Path", DenormalizeLibraryPyPath(settings.McpEnvPath)));
+                    var commonPythonFallback = EditorGUILayout.TextField("Python Fallback", settings.McpPythonFallback);
+                    if (settings.SearchApiPythonPath != commonPythonPath) settings.SearchApiPythonPath = commonPythonPath;
+                    if (settings.McpPythonPath != commonPythonPath) settings.McpPythonPath = commonPythonPath;
+                    if (settings.SearchApiEnvPath != commonEnvPath) settings.SearchApiEnvPath = commonEnvPath;
+                    if (settings.McpEnvPath != commonEnvPath) settings.McpEnvPath = commonEnvPath;
+                    if (settings.SearchApiPythonFallback != commonPythonFallback) settings.SearchApiPythonFallback = commonPythonFallback;
+                    if (settings.McpPythonFallback != commonPythonFallback) settings.McpPythonFallback = commonPythonFallback;
+
+                    if (GUILayout.Button("Wipe Python Environment"))
+                    {
+                        TryWipeEnvironment(settings.McpEnvPath, "Python");
+                    }
+                    
                     // Search API settings
                     EditorGUILayout.Space();
                     EditorGUILayout.LabelField("Search API Settings", EditorStyles.boldLabel);
-                    settings.SearchApiHost = EditorGUILayout.TextField("Search API Host", settings.SearchApiHost);
-                    settings.SearchApiPythonPath = EditorGUILayout.TextField("Search API Python Path", settings.SearchApiPythonPath);
-                    settings.SearchApiEnvPath = EditorGUILayout.TextField("Search API Env Path", settings.SearchApiEnvPath);
-                    settings.SearchApiPythonFallback = EditorGUILayout.TextField("Search API Python Fallback", settings.SearchApiPythonFallback);
-
+                    settings.SearchApiHost = DrawStatusInlineTextField(
+                        "Search API Host",
+                        settings.SearchApiHost,
+                        _searchAvailable,
+                        _searchChecking,
+                        _searchStatusKnown);
                     if (_lastSearchHost != settings.SearchApiHost)
                     {
                         _lastSearchHost = settings.SearchApiHost;
                         _searchStatusKnown = false;
                     }
                     
-                    DrawStatusRow("Search API Status", _searchAvailable, _searchChecking, _searchStatusKnown);
                     if (!_searchChecking && !_searchStatusKnown)
                     {
                         CheckSearchStatusAsync(settings);
-                    }
-                    
-                    if (GUILayout.Button("Test Search API Connection"))
-                    {
-                        // Run the check asynchronously to avoid blocking the main thread
-                        CheckSearchApiAvailableAsync(settings);
-                    }
-                    
-                    if (GUILayout.Button("Create Python Environment"))
-                    {
-                        ExtractorRunner.TryCreatePythonEnvironment(settings.SearchApiPythonPath, settings.SearchApiEnvPath, settings.SearchApiPythonFallback);
-                    }
-                    
-                    if (GUILayout.Button("Wipe Search Environment"))
-                    {
-                        TryWipeEnvironment(settings.SearchApiEnvPath, "Search API");
                     }
                     
                     if (GUILayout.Button("Create a new index"))
@@ -124,10 +126,8 @@ namespace GPTUnity.Data
                         _mcpServerAvailable,
                         _mcpServerChecking,
                         _mcpStatusKnown);
-                    settings.McpPythonPath = EditorGUILayout.TextField("MCP Python Path", settings.McpPythonPath);
-                    settings.McpEnvPath = EditorGUILayout.TextField("MCP Env Path", settings.McpEnvPath);
-                    settings.McpPythonFallback = EditorGUILayout.TextField("MCP Python Fallback", settings.McpPythonFallback);
                     settings.McpAutoStart = EditorGUILayout.Toggle("MCP Autostart", settings.McpAutoStart);
+                    settings.McpUseUpdateQueue = EditorGUILayout.Toggle("MCP Use Update Queue", settings.McpUseUpdateQueue);
                     
                     if (_lastMcpBridgeUrl != settings.McpBridgeUrl || _lastMcpServerUrl != settings.McpServerUrl)
                     {
@@ -163,11 +163,6 @@ namespace GPTUnity.Data
                         _mcpServerChecking = false;
                         _mcpStatusKnown = true;
                         _mcpAutoRetryEnabled = false;
-                    }
-                    
-                    if (GUILayout.Button("Wipe MCP Environment"))
-                    {
-                        TryWipeEnvironment(settings.McpEnvPath, "MCP");
                     }
                     
                     if (GUILayout.Button("Refresh MCP Status"))
@@ -390,9 +385,8 @@ namespace GPTUnity.Data
             if (settings == null)
                 return;
 
-            if (!IsPythonEnvMissing(settings.SearchApiPythonPath, settings.SearchApiEnvPath, "venv"))
-                return;
-
+            // Always ensure dependencies are installed (fastapi, uvicorn, etc.).
+            // This is needed even when the env exists but packages are missing.
             ExtractorRunner.TryCreatePythonEnvironment(
                 settings.SearchApiPythonPath,
                 settings.SearchApiEnvPath,
@@ -404,7 +398,7 @@ namespace GPTUnity.Data
             if (settings == null)
                 return;
 
-            if (!IsPythonEnvMissing(settings.McpPythonPath, settings.McpEnvPath, "venv_mcp"))
+            if (!IsPythonEnvMissing(settings.McpPythonPath, settings.McpEnvPath, "Library/py/mcp"))
                 return;
 
             ExtractorRunner.TryCreateMcpEnvironment(
@@ -432,6 +426,44 @@ namespace GPTUnity.Data
         {
             return pythonPath.IndexOf(Path.DirectorySeparatorChar) == -1 &&
                    pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
+        }
+
+        private static string NormalizeLibraryPyPath(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            var trimmed = input.Trim();
+
+            if (Path.IsPathRooted(trimmed))
+                return trimmed.Replace("\\", "/");
+
+            if (IsSimpleExecutableName(trimmed))
+                return trimmed;
+
+            var normalized = trimmed.Replace("\\", "/");
+            if (normalized.StartsWith("Library/py/", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalized, "Library/py", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalized;
+            }
+
+            return $"Library/py/{normalized}";
+        }
+
+        private static string DenormalizeLibraryPyPath(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            var normalized = input.Replace("\\", "/").Trim();
+            if (normalized.Equals("Library/py", StringComparison.OrdinalIgnoreCase))
+                return string.Empty;
+
+            if (normalized.StartsWith("Library/py/", StringComparison.OrdinalIgnoreCase))
+                return normalized.Substring("Library/py/".Length);
+
+            return input;
         }
 
         private static void TryWipeEnvironment(string envPath, string label)

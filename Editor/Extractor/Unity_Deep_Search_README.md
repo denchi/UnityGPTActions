@@ -22,7 +22,7 @@ UnityProject/
 │       │       └── ...
 │       └── package.json
 ├── DeepSearchIndexer/   # Python tooling (OUTSIDE Unity)
-│   ├── venv/
+│   ├── Library/py/mcp/
 │   ├── extract_all.py
 │   ├── index_all.py
 │   ├── search_api.py
@@ -38,8 +38,8 @@ UnityProject/
 1. Create and activate a virtual environment:
 ```bash
 cd DeepSearchIndexer
-python3 -m venv venv
-source venv/bin/activate  # Or venv\Scripts\activate on Windows
+python3 -m venv Library/py/mcp
+source Library/py/mcp/bin/activate  # Or Library\py\mcp\Scripts\activate on Windows
 ```
 
 2. Install dependencies:
@@ -126,7 +126,7 @@ Or via `DeepSearchClient.StopSearchServer()`.
 
 ## ⚠️ Notes
 - Keep `DeepSearchIndexer` OUTSIDE your Unity `Packages/` to avoid import issues.
-- Avoid putting `venv/` inside Unity packages.
+- Avoid putting `Library/py/` inside Unity packages.
 - Unity expects paths starting with `Assets/` for AssetDatabase access.
 
 ## 📝 Summary Responsibilities

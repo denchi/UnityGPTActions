@@ -1,6 +1,7 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
+from starlette.applications import Starlette
+from starlette.responses import JSONResponse
+from starlette.routing import Route
+from starlette.requests import Request
 from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
@@ -26,43 +27,36 @@ model = SentenceTransformer(embedding_model_name)
 
 # ------------------------
 # API Setup
-app = FastAPI()
+async def ping(_: Request):
+    return JSONResponse({"message": "UnityGPT Search API is running!"})
 
-class SearchRequest(BaseModel):
-    query: str
-    top_k: int = 5
+async def search(request: Request):
+    body = await request.json()
+    query = body.get("query", "")
+    top_k = int(body.get("top_k", 5))
 
-class SearchResult(BaseModel):
-    file: str
-    type: str
-    name: str
-    content: str
-    className: str
-
-# simple get request returning true
-@app.get("/ping", tags=["Health Check"])
-def read_root():
-    return {"message": "UnityGPT Search API is running!"}
-
-@app.post("/search", response_model=List[SearchResult])
-def search(request: SearchRequest):
-    embedding = model.encode([request.query])
+    embedding = model.encode([query])
     embedding = np.array(embedding).astype('float32')
-    D, I = index.search(embedding, request.top_k)
+    D, I = index.search(embedding, top_k)
 
     results = []
     for idx in I[0]:
         if idx < len(metadata):
             item = metadata[idx]
-            results.append(SearchResult(
-                file=item["file"],
-                type=item["type"],
-                name=item["name"],
-                className=item.get("class", ""),            
-                content=item["content"],
-            ))
+            results.append({
+                "file": item["file"],
+                "type": item["type"],
+                "name": item["name"],
+                "className": item.get("class", ""),
+                "content": item["content"],
+            })
 
-    return results
+    return JSONResponse(results)
+
+app = Starlette(routes=[
+    Route("/ping", ping, methods=["GET"]),
+    Route("/search", search, methods=["POST"]),
+])
 
 # -MCP-----------------------
 

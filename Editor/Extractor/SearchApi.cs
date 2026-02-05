@@ -24,7 +24,7 @@ namespace GPTUnity.Indexing
 
         private Process _serverProcess;
         
-        public DeepSearchClient(string host = "http://127.0.0.1:8000", string pythonExe = "venv/bin/python3")
+        public DeepSearchClient(string host = "http://127.0.0.1:8000", string pythonExe = "Library/py/mcp/bin/python3")
         {
             this._host = host;
             this._pythonExe = pythonExe;
@@ -65,8 +65,23 @@ namespace GPTUnity.Indexing
             };
             _serverProcess.ErrorDataReceived += (sender, e) =>
             {
-                if (!string.IsNullOrEmpty(e.Data))
-                    UnityEngine.Debug.LogError("[SearchAPI ERROR] " + e.Data);
+                if (string.IsNullOrEmpty(e.Data))
+                    return;
+
+                var line = e.Data.Trim();
+                if (line.StartsWith("INFO:", StringComparison.OrdinalIgnoreCase))
+                {
+                    UnityEngine.Debug.Log("[SearchAPI] " + line);
+                }
+                else if (line.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase) ||
+                         line.Contains("Warning", StringComparison.OrdinalIgnoreCase))
+                {
+                    UnityEngine.Debug.LogWarning("[SearchAPI] " + line);
+                }
+                else
+                {
+                    UnityEngine.Debug.LogError("[SearchAPI ERROR] " + line);
+                }
             };
 
             _serverProcess.Start();
