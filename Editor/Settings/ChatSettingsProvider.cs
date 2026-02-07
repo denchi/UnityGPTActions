@@ -1,8 +1,6 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Threading.Tasks;
 using DeathByGravity.GPTActions;
 using GPTUnity.Indexing;
 using GPTUnity.Settings;
@@ -56,8 +54,8 @@ namespace GPTUnity.Data
                     // Common settings
                     EditorGUILayout.Space();
                     EditorGUILayout.LabelField("Common Configs", EditorStyles.boldLabel);
-                    var commonPythonPath = NormalizeLibraryPyPath(EditorGUILayout.TextField("Python Path", DenormalizeLibraryPyPath(settings.McpPythonPath)));
-                    var commonEnvPath = NormalizeLibraryPyPath(EditorGUILayout.TextField("Python Env Path", DenormalizeLibraryPyPath(settings.McpEnvPath)));
+                    var commonPythonPath = ChatSettings.NormalizeLibraryPyRelative(EditorGUILayout.TextField("Python Path", settings.McpPythonPath));
+                    var commonEnvPath = ChatSettings.NormalizeLibraryPyRelative(EditorGUILayout.TextField("Python Env Path", settings.McpEnvPath));
                     var commonPythonFallback = EditorGUILayout.TextField("Python Fallback", settings.McpPythonFallback);
                     if (settings.SearchApiPythonPath != commonPythonPath) settings.SearchApiPythonPath = commonPythonPath;
                     if (settings.McpPythonPath != commonPythonPath) settings.McpPythonPath = commonPythonPath;
@@ -68,7 +66,7 @@ namespace GPTUnity.Data
 
                     if (GUILayout.Button("Wipe Python Environment"))
                     {
-                        TryWipeEnvironment(settings.McpEnvPath, "Python");
+                        TryWipeEnvironment(settings, settings.McpEnvPath, "Python");
                     }
                     
                     // Search API settings
@@ -201,7 +199,7 @@ namespace GPTUnity.Data
             else
             {
                 // If the window or client is not available, create a new client
-                var client = new DeepSearchClient(settings.SearchApiHost, settings.SearchApiPythonPath);
+                var client = new DeepSearchClient(settings.SearchApiHost, settings.SearchApiPythonPathResolved);
                 try
                 {
                     isAvailable = await client.IsServerAvailable();
@@ -380,30 +378,30 @@ namespace GPTUnity.Data
             return value;
         }
 
-        private static void EnsureSearchEnvironment(ChatSettings settings)
+        private static bool EnsureSearchEnvironment(ChatSettings settings)
         {
             if (settings == null)
-                return;
+                return false;
 
             // Always ensure dependencies are installed (fastapi, uvicorn, etc.).
             // This is needed even when the env exists but packages are missing.
-            ExtractorRunner.TryCreatePythonEnvironment(
-                settings.SearchApiPythonPath,
-                settings.SearchApiEnvPath,
+            return ExtractorRunner.TryCreatePythonEnvironment(
+                settings.SearchApiPythonPathResolved,
+                settings.SearchApiEnvPathResolved,
                 settings.SearchApiPythonFallback);
         }
 
-        private static void EnsureMcpEnvironment(ChatSettings settings)
+        private static bool EnsureMcpEnvironment(ChatSettings settings)
         {
             if (settings == null)
-                return;
+                return false;
 
-            if (!IsPythonEnvMissing(settings.McpPythonPath, settings.McpEnvPath, "Library/py/mcp"))
-                return;
+            if (!IsPythonEnvMissing(settings.McpPythonPathResolved, settings.McpEnvPathResolved, ChatSettings.ResolveLibraryPyPath("venv_mcp")))
+                return false;
 
-            ExtractorRunner.TryCreateMcpEnvironment(
-                settings.McpPythonPath,
-                settings.McpEnvPath,
+            return ExtractorRunner.TryCreateMcpEnvironment(
+                settings.McpPythonPathResolved,
+                settings.McpEnvPathResolved,
                 settings.McpPythonFallback);
         }
 
@@ -428,48 +426,11 @@ namespace GPTUnity.Data
                    pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
         }
 
-        private static string NormalizeLibraryPyPath(string input)
+        private static void TryWipeEnvironment(ChatSettings settings, string envPath, string label)
         {
-            if (string.IsNullOrWhiteSpace(input))
-                return input;
-
-            var trimmed = input.Trim();
-
-            if (Path.IsPathRooted(trimmed))
-                return trimmed.Replace("\\", "/");
-
-            if (IsSimpleExecutableName(trimmed))
-                return trimmed;
-
-            var normalized = trimmed.Replace("\\", "/");
-            if (normalized.StartsWith("Library/py/", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(normalized, "Library/py", StringComparison.OrdinalIgnoreCase))
-            {
-                return normalized;
-            }
-
-            return $"Library/py/{normalized}";
-        }
-
-        private static string DenormalizeLibraryPyPath(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return input;
-
-            var normalized = input.Replace("\\", "/").Trim();
-            if (normalized.Equals("Library/py", StringComparison.OrdinalIgnoreCase))
-                return string.Empty;
-
-            if (normalized.StartsWith("Library/py/", StringComparison.OrdinalIgnoreCase))
-                return normalized.Substring("Library/py/".Length);
-
-            return input;
-        }
-
-        private static void TryWipeEnvironment(string envPath, string label)
-        {
-            var targetPath = Path.GetFullPath(string.IsNullOrWhiteSpace(envPath) ? "" : envPath);
-            if (string.IsNullOrWhiteSpace(envPath) || !Directory.Exists(targetPath))
+            var resolvedPath = ChatSettings.ResolveLibraryPyPath(envPath);
+            var targetPath = Path.GetFullPath(string.IsNullOrWhiteSpace(resolvedPath) ? "" : resolvedPath);
+            if (string.IsNullOrWhiteSpace(resolvedPath) || !Directory.Exists(targetPath))
             {
                 EditorUtility.DisplayDialog(
                     "Wipe Environment",

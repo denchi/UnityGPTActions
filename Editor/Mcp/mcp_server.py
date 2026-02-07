@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import os
 import urllib.error
 import urllib.request
 
@@ -95,6 +96,10 @@ def create_server(unity_url):
     async def list_resources():
         return _resource_cache
 
+    @server.list_resource_templates()
+    async def list_resource_templates():
+        return []
+
     @server.read_resource()
     async def read_resource(uri):
         if not uri.startswith("tool://"):
@@ -121,7 +126,7 @@ def main():
     parser.add_argument("--unity-url", required=True, help="Unity MCP Bridge base URL")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7072)
-    parser.add_argument("--log-level", default="info")
+    parser.add_argument("--log-level", default=os.environ.get("MCP_LOG_LEVEL", "info"))
     args = parser.parse_args()
 
     server = create_server(args.unity_url)
@@ -130,7 +135,7 @@ def main():
         app=server,
         event_store=None,
         json_response=True,
-        stateless=True,
+        stateless=False,
     )
 
     async def handle_sse(request):
@@ -144,7 +149,54 @@ def main():
             self.manager = manager
 
         async def __call__(self, scope, receive, send):
-            await self.manager.handle_request(scope, receive, send)
+            log_payloads = os.environ.get("MCP_LOG_PAYLOAD") == "1"
+            request_body = []
+            response_body = []
+            response_status = {"code": None}
+            response_headers = []
+
+            async def receive_wrapped():
+                message = await receive()
+                if log_payloads and message.get("type") == "http.request":
+                    body = message.get("body")
+                    if body:
+                        request_body.append(body)
+                return message
+
+            async def send_wrapped(message):
+                if log_payloads and message.get("type") == "http.response.start":
+                    response_status["code"] = message.get("status")
+                    response_headers.extend(message.get("headers") or [])
+                if log_payloads and message.get("type") == "http.response.body":
+                    body = message.get("body")
+                    if body:
+                        response_body.append(body)
+                await send(message)
+
+            await self.manager.handle_request(scope, receive_wrapped, send_wrapped)
+
+            if log_payloads:
+                try:
+                    req_bytes = b"".join(request_body)
+                    res_bytes = b"".join(response_body)
+                    req_text = req_bytes.decode("utf-8", errors="replace")
+                    res_text = res_bytes.decode("utf-8", errors="replace")
+                    if len(req_text) > 4096:
+                        req_text = req_text[:4096] + "...(truncated)"
+                    if len(res_text) > 4096:
+                        res_text = res_text[:4096] + "...(truncated)"
+                    header_text = "\n".join(
+                        f"{k.decode('utf-8', errors='replace')}: {v.decode('utf-8', errors='replace')}"
+                        for k, v in response_headers
+                    )
+                    print(
+                        f"[MCP] HTTP {scope.get('method')} {scope.get('path')} -> {response_status['code']}\n"
+                        f"[MCP] Request Body:\n{req_text}\n"
+                        f"[MCP] Response Headers:\n{header_text}\n"
+                        f"[MCP] Response Body:\n{res_text}"
+                    )
+                except Exception:
+                    pass
 
     streamable_asgi = StreamableASGI(streamable_http)
 
@@ -162,6 +214,18 @@ def main():
     async def handle_health(request):
         return JSONResponse({"ok": True})
 
+    async def handle_oauth_metadata(request):
+        base = f"http://{args.host}:{args.port}"
+        return JSONResponse(
+            {
+                "issuer": base,
+                "authorization_endpoint": None,
+                "token_endpoint": None,
+                "response_types_supported": [],
+                "grant_types_supported": [],
+            }
+        )
+
     app = Starlette(
         lifespan=lifespan,
         routes=[
@@ -169,6 +233,9 @@ def main():
             Mount("/mcp/messages", app=sse.handle_post_message),
             Route("/mcp/shutdown", endpoint=handle_shutdown, methods=["POST"]),
             Route("/mcp/health", endpoint=handle_health),
+            Route("/.well-known/oauth-authorization-server", endpoint=handle_oauth_metadata),
+            Route("/mcp/.well-known/oauth-authorization-server", endpoint=handle_oauth_metadata),
+            Route("/.well-known/oauth-authorization-server/mcp", endpoint=handle_oauth_metadata),
             Route("/mcp", endpoint=streamable_asgi, methods=["POST"]),
             Route("/mcp/", endpoint=streamable_asgi, methods=["POST"]),
         ],

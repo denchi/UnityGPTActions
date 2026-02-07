@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
+using System.IO;
 
 namespace GPTUnity.Settings
 {
@@ -13,18 +14,17 @@ namespace GPTUnity.Settings
         
         [Header("Search Api Settings")]
         [SerializeField] private string _searchApiHost = "http://127.0.0.1:8000";
-        [SerializeField] private string _searchApiPythonPath = "Library/py/mcp/bin/python3";
-        [SerializeField] private string _searchApiEnvPath = "Library/py/mcp";
-        [SerializeField] private string _searchApiPythonFallback = "python3";
+
+        [Header("Python Settings")]
+        [SerializeField] private string _pythonPath = "venv_mcp/bin/python3";
+        [SerializeField] private string _envPath = "venv_mcp";
+        [SerializeField] private string _pythonFallback = "python3.11";
         
         [Header("MCP Settings")]
         [SerializeField] private string _mcpBridgeUrl = "http://127.0.0.1:7071";
         [SerializeField] private string _mcpServerUrl = "http://127.0.0.1:7072/mcp/sse";
-        [SerializeField] private string _mcpPythonPath = "Library/py/mcp/bin/python3";
         [SerializeField] private bool _mcpAutoStart = false;
         [SerializeField] private bool _mcpUseUpdateQueue = true;
-        [SerializeField] private string _mcpEnvPath = "Library/py/mcp";
-        [SerializeField] private string _mcpPythonFallback = "python3.11";
 
         public Color ColorBackgroundUser
         {
@@ -52,20 +52,20 @@ namespace GPTUnity.Settings
 
         public string SearchApiPythonPath
         {
-            get { return _searchApiPythonPath; }
-            set { _searchApiPythonPath = value; }
+            get { return _pythonPath; }
+            set { _pythonPath = value; }
         }
 
         public string SearchApiEnvPath
         {
-            get { return _searchApiEnvPath; }
-            set { _searchApiEnvPath = value; }
+            get { return _envPath; }
+            set { _envPath = value; }
         }
 
         public string SearchApiPythonFallback
         {
-            get { return _searchApiPythonFallback; }
-            set { _searchApiPythonFallback = value; }
+            get { return _pythonFallback; }
+            set { _pythonFallback = value; }
         }
 
         public string McpBridgeUrl
@@ -82,8 +82,8 @@ namespace GPTUnity.Settings
 
         public string McpPythonPath
         {
-            get { return _mcpPythonPath; }
-            set { _mcpPythonPath = value; }
+            get { return _pythonPath; }
+            set { _pythonPath = value; }
         }
 
         public bool McpAutoStart
@@ -100,14 +100,69 @@ namespace GPTUnity.Settings
 
         public string McpEnvPath
         {
-            get { return _mcpEnvPath; }
-            set { _mcpEnvPath = value; }
+            get { return _envPath; }
+            set { _envPath = value; }
         }
 
         public string McpPythonFallback
         {
-            get { return _mcpPythonFallback; }
-            set { _mcpPythonFallback = value; }
+            get { return _pythonFallback; }
+            set { _pythonFallback = value; }
+        }
+
+        public string SearchApiPythonPathResolved => ResolveLibraryPyPath(_pythonPath);
+        public string SearchApiEnvPathResolved => ResolveLibraryPyPath(_envPath);
+        public string McpPythonPathResolved => ResolveLibraryPyPath(_pythonPath);
+        public string McpEnvPathResolved => ResolveLibraryPyPath(_envPath);
+
+        public static string NormalizeLibraryPyRelative(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            var trimmed = input.Trim().Replace("\\", "/");
+            if (trimmed.Equals("Library/py", System.StringComparison.OrdinalIgnoreCase))
+                return string.Empty;
+
+            if (trimmed.StartsWith("Library/py/", System.StringComparison.OrdinalIgnoreCase))
+                return trimmed.Substring("Library/py/".Length);
+
+            if (System.IO.Path.IsPathRooted(trimmed))
+            {
+                var fullPath = System.IO.Path.GetFullPath(trimmed).Replace("\\", "/");
+                var root = GetLibraryPyRoot().Replace("\\", "/");
+                if (fullPath.StartsWith(root, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return fullPath.Substring(root.Length).TrimStart('/');
+                }
+
+                Debug.LogWarning($"[ChatSettings] Expected a path under '{root}'. Storing relative name only.");
+                return System.IO.Path.GetFileName(fullPath);
+            }
+
+            return trimmed.TrimStart('/');
+        }
+
+        public static string ResolveLibraryPyPath(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return relativePath;
+
+            var normalized = relativePath.Replace("\\", "/").TrimStart('/');
+            if (System.IO.Path.IsPathRooted(normalized))
+                return System.IO.Path.GetFullPath(normalized);
+            if (normalized.Equals("Library/py", System.StringComparison.OrdinalIgnoreCase))
+                return GetLibraryPyRoot();
+
+            if (normalized.StartsWith("Library/py/", System.StringComparison.OrdinalIgnoreCase))
+                normalized = normalized.Substring("Library/py/".Length);
+
+            return System.IO.Path.Combine(GetLibraryPyRoot(), normalized);
+        }
+
+        public static string GetLibraryPyRoot()
+        {
+            return System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Library", "py"));
         }
     }
 }

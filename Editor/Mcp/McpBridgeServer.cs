@@ -190,7 +190,7 @@ namespace Mcp
                     if (action is IGPTActionThatRequiresIndexingApi actionThatRequiresIndexingApi)
                     {
                         actionThatRequiresIndexingApi.Indexing =
-                            new DeepSearchClient(ChatSettings.instance.SearchApiHost, ChatSettings.instance.SearchApiPythonPath);
+                            new DeepSearchClient(ChatSettings.instance.SearchApiHost, ChatSettings.instance.SearchApiPythonPathResolved);
                     }
 
                     if (action is IGPTActionThatRequiresImagesApi actionThatRequiresImagesApi)

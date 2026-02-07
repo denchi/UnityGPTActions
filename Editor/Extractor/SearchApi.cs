@@ -24,7 +24,7 @@ namespace GPTUnity.Indexing
 
         private Process _serverProcess;
         
-        public DeepSearchClient(string host = "http://127.0.0.1:8000", string pythonExe = "Library/py/mcp/bin/python3")
+        public DeepSearchClient(string host = "http://127.0.0.1:8000", string pythonExe = "Library/py/venv_mcp/bin/python3")
         {
             this._host = host;
             this._pythonExe = pythonExe;

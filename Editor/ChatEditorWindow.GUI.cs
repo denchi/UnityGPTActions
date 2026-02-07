@@ -3,6 +3,7 @@ using System.Linq;
 using GPTUnity.Api;
 using GPTUnity.Helpers;
 using GPTUnity.Settings;
+using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -47,6 +48,12 @@ public partial class ChatEditorWindow
         resetIconButton.style.backgroundImage = _iconsHelpers.LoadUnityIcon("d_Toolbar Plus");
         resetIconButton.tooltip = "New Chat";
         toolbar.Add(resetIconButton);
+
+        var settingsIconButton = new Button(OpenChatSettings) { text = "" };
+        settingsIconButton.style.width = settingsIconButton.style.height = 18;
+        settingsIconButton.style.backgroundImage = _iconsHelpers.LoadUnityIcon("d_SettingsIcon");
+        settingsIconButton.tooltip = "Chat Settings";
+        toolbar.Add(settingsIconButton);
 
         // 3-dot menu as a label (not a button)
         var menuLabel = new Label("\u22EE"); // Unicode vertical ellipsis
@@ -236,6 +243,11 @@ public partial class ChatEditorWindow
         _messagesScrollView.scrollOffset = _lastScrollOffset;
 
         OnGUICreated();
+    }
+
+    private static void OpenChatSettings()
+    {
+        SettingsService.OpenProjectSettings("Project/Chat Settings");
     }
 
     private void ShowNoApiKeysUI()

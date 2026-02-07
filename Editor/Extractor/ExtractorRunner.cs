@@ -16,7 +16,7 @@ namespace DeathByGravity.GPTActions
         [MenuItem("Tools/Unity Assistant/Run Extractor")]
         public static void RunExtractor(ChatSettings settings)
         {
-            string pythonExe = settings.SearchApiPythonPath;
+            string pythonExe = settings.SearchApiPythonPathResolved;
             string extractorPath = Path.GetFullPath(
                 "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
             );
@@ -65,7 +65,7 @@ namespace DeathByGravity.GPTActions
         [MenuItem("Tools/Unity Assistant/Run Indexer")]
         public static void RunIndexer(ChatSettings settings)
         {
-            string pythonExe = settings.SearchApiPythonPath;
+            string pythonExe = settings.SearchApiPythonPathResolved;
             string extractorPath = Path.GetFullPath(
                 "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/index_all.py"
             );
@@ -112,9 +112,9 @@ namespace DeathByGravity.GPTActions
         //     DeepSearchClient.StopSearchServer();
         // }
         
-        public static void TryCreatePythonEnvironment(string pythonPath, string envPath = "Library/py/mcp", string pythonFallback = "python3")
+        public static bool TryCreatePythonEnvironment(string pythonPath, string envPath = "Library/py/venv_mcp", string pythonFallback = "python3")
         {
-            CreateOrUpdatePythonEnvironment(
+            return CreateOrUpdatePythonEnvironment(
                 pythonPath,
                 defaultVenvName: envPath,
                 packages: new[]
@@ -131,9 +131,9 @@ namespace DeathByGravity.GPTActions
                 pythonFallback: pythonFallback);
         }
 
-        public static void TryCreateMcpEnvironment(string pythonPath, string envPath = "Library/py/mcp", string pythonFallback = "python3.11")
+        public static bool TryCreateMcpEnvironment(string pythonPath, string envPath = "Library/py/venv_mcp", string pythonFallback = "python3.11")
         {
-            CreateOrUpdatePythonEnvironment(
+            return CreateOrUpdatePythonEnvironment(
                 pythonPath,
                 defaultVenvName: envPath,
                 packages: new[]
@@ -145,7 +145,7 @@ namespace DeathByGravity.GPTActions
                 pythonFallback: pythonFallback);
         }
 
-        private static void CreateOrUpdatePythonEnvironment(
+        private static bool CreateOrUpdatePythonEnvironment(
             string pythonPath,
             string defaultVenvName,
             string[] packages,
@@ -156,13 +156,18 @@ namespace DeathByGravity.GPTActions
             if (string.IsNullOrWhiteSpace(pythonPath))
             {
                 Debug.LogError("[Indexer] Python path is empty.");
-                return;
+                return false;
             }
 
             var pythonFile = ResolvePythonExecutable(pythonPath);
             if (!IsSimpleExecutableName(pythonFile) && !File.Exists(pythonFile))
             {
                 var fallback = ResolveInterpreterFallback(requirePython310, pythonFallback);
+                if (string.IsNullOrWhiteSpace(fallback))
+                {
+                    return false;
+                }
+
                 Debug.LogWarning($"[Indexer] Python path not found: {pythonFile}. Falling back to '{fallback}'.");
                 pythonFile = fallback;
             }
@@ -171,7 +176,7 @@ namespace DeathByGravity.GPTActions
             if (string.IsNullOrEmpty(venvFolder))
             {
                 Debug.LogError("[Indexer] Invalid Python path. Expected something like Library/py/search/bin/python3 or python3.11.");
-                return;
+                return false;
             }
 
             var shouldCreateVenv = !Directory.Exists(venvFolder);
@@ -205,7 +210,11 @@ namespace DeathByGravity.GPTActions
                 if (requirePython310 && !PythonSupportsMcp(venvPython))
                 {
                     Debug.LogWarning("[Indexer] MCP requires Python >= 3.10. Configure MCP Python Path to a 3.10+ interpreter.");
-                    return;
+                    EditorUtility.DisplayDialog(
+                        "Python 3.10+ Required",
+                        "MCP requires Python 3.10+. Please install Python 3.10+ and update the Python Path in Chat Settings.",
+                        "OK");
+                    return false;
                 }
 
                 var pipPackages = new System.Collections.Generic.List<string>(packages);
@@ -238,10 +247,12 @@ namespace DeathByGravity.GPTActions
 
                 var status = shouldCreateVenv ? "created and configured" : "updated";
                 Debug.Log($"[Indexer] Python environment {status} at {venvFolder}");
+                return shouldCreateVenv;
             }
             catch (Exception e)
             {
                 Debug.LogError($"[Indexer] Failed to configure Python environment: {e.Message}");
+                return false;
             }
         }
 
@@ -332,8 +343,10 @@ namespace DeathByGravity.GPTActions
             if (!string.IsNullOrWhiteSpace(pythonFallback))
             {
                 if (IsSimpleExecutableName(pythonFallback))
-                    return pythonFallback;
-                if (File.Exists(pythonFallback))
+                    if (TestInterpreter(pythonFallback, requirePython310))
+                        return pythonFallback;
+                
+                if (File.Exists(pythonFallback) && TestInterpreter(pythonFallback, requirePython310))
                     return pythonFallback;
             }
 
@@ -348,6 +361,16 @@ namespace DeathByGravity.GPTActions
                 {
                     return candidate;
                 }
+            }
+
+            if (requirePython310)
+            {
+                Debug.LogError("[Indexer] No Python 3.10+ interpreter found. Install Python 3.10+ and configure the Python Path.");
+                EditorUtility.DisplayDialog(
+                    "Python 3.10+ Not Found",
+                    "No Python 3.10+ interpreter was found. Install Python 3.10+ and update the Python Path in Chat Settings.",
+                    "OK");
+                return null;
             }
 
             return DeriveInterpreterFallback(requirePython310);

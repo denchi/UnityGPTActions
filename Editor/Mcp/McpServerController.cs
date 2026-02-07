@@ -68,13 +68,13 @@ namespace Mcp
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(settings.McpPythonPath))
+            if (string.IsNullOrWhiteSpace(settings.McpPythonPathResolved))
             {
                 Debug.LogError("[MCP] MCP Python path is not set.");
                 return;
             }
 
-            var pythonExe = ResolvePythonExecutable(settings.McpPythonPath);
+            var pythonExe = ResolvePythonExecutable(settings.McpPythonPathResolved);
             if (!IsSimpleExecutableName(pythonExe) && !File.Exists(pythonExe))
             {
                 Debug.LogWarning($"[MCP] MCP Python path not found: {pythonExe}. Falling back to 'python3'.");
@@ -101,6 +101,8 @@ namespace Mcp
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+            startInfo.Environment["MCP_LOG_PAYLOAD"] = "1";
+            startInfo.Environment["MCP_LOG_LEVEL"] = "debug";
 
             _pythonProcess = new Process();
             _pythonProcess.StartInfo = startInfo;
@@ -111,7 +113,7 @@ namespace Mcp
             _pythonProcess.BeginOutputReadLine();
             _pythonProcess.BeginErrorReadLine();
 
-            Debug.Log($"[MCP] MCP server starting: {settings.McpPythonPath} {args}");
+            Debug.Log($"[MCP] MCP server starting: {settings.McpPythonPathResolved} {args}");
         }
 
         private static void StopPythonServer(ChatSettings settings)
