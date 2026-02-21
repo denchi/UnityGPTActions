@@ -33,10 +33,12 @@ namespace Mcp
 
             McpBridgeServer.Start(settings.McpBridgeUrl);
             StartPythonServer(settings);
+            HubAgentRegistrar.Start(settings);
         }
 
         public static void StopAll()
         {
+            HubAgentRegistrar.Stop();
             StopPythonServer(ChatSettings.instance);
             McpBridgeServer.Stop();
         }
@@ -46,6 +48,12 @@ namespace Mcp
             var settings = ChatSettings.instance;
             if (settings == null || !settings.McpAutoStart)
                 return;
+
+            if (!IsMcpEnvironmentReady(settings))
+            {
+                Debug.Log("[MCP] Autostart skipped: MCP environment is not set up.");
+                return;
+            }
 
             StartAll(settings);
         }
@@ -97,6 +105,7 @@ namespace Mcp
             var startInfo = new ProcessStartInfo(pythonExe, args)
             {
                 UseShellExecute = false,
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
@@ -118,6 +127,7 @@ namespace Mcp
 
         private static void StopPythonServer(ChatSettings settings)
         {
+            HubAgentRegistrar.Stop();
             TryRequestShutdown(settings);
 
             if (_pythonProcess == null || _pythonProcess.HasExited)
@@ -227,6 +237,28 @@ namespace Mcp
         {
             return pythonPath.IndexOf(Path.DirectorySeparatorChar) == -1 &&
                    pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
+        }
+
+        private static bool IsMcpEnvironmentReady(ChatSettings settings)
+        {
+            if (settings == null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(settings.McpEnvPathResolved))
+                return false;
+
+            var envPath = Path.GetFullPath(settings.McpEnvPathResolved);
+            if (!Directory.Exists(envPath))
+                return false;
+
+            var pythonPath = settings.McpPythonPathResolved;
+            if (string.IsNullOrWhiteSpace(pythonPath))
+                return false;
+
+            if (IsSimpleExecutableName(pythonPath))
+                return true;
+
+            return File.Exists(Path.GetFullPath(pythonPath));
         }
 
         private static void LogOutput(object sender, DataReceivedEventArgs e)

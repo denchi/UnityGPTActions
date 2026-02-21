@@ -22,8 +22,8 @@ namespace GPTUnity.Settings
         
         [Header("MCP Settings")]
         [SerializeField] private string _mcpBridgeUrl = "http://127.0.0.1:7071";
-        [SerializeField] private string _mcpServerUrl = "http://127.0.0.1:7072/mcp/sse";
-        [SerializeField] private bool _mcpAutoStart = false;
+        [SerializeField] private string _mcpServerUrl = "http://127.0.0.1:7072/mcp";
+        [SerializeField] private bool _mcpAutoStart = true;
         [SerializeField] private bool _mcpUseUpdateQueue = true;
 
         public Color ColorBackgroundUser
@@ -163,6 +163,11 @@ namespace GPTUnity.Settings
         public static string GetLibraryPyRoot()
         {
             return System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Library", "py"));
+        }
+
+        public void SaveSettings(bool saveAsText = true)
+        {
+            Save(saveAsText);
         }
     }
 }

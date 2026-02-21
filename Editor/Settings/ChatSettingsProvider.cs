@@ -173,6 +173,7 @@ namespace GPTUnity.Data
                         settings.ColorBackgroundUser = newColorBackgroundUser;
                         settings.ColorBackgroundAssistant = newColorBackgroundAssistant;
                         settings.ColorChatBackground = newColorChatBackground;
+                        settings.SaveSettings(true);
                     }
                 }
             };
