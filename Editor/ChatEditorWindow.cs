@@ -875,7 +875,7 @@ public partial class ChatEditorWindow : EditorWindow
         
         _api = new LegacyOpenAIApiService(key: apiKey);
         _imagesApi = new OpenAIImageServiceApi(key: apiKey);
-        _indexingApi = new DeepSearchClient(ChatSettings.instance.SearchApiHost, ChatSettings.instance.SearchApiPythonPathResolved);
+        _indexingApi = new DeepSearchClient(ChatSettings.instance.SearchApiHostResolved, ChatSettings.instance.SearchApiPythonPathResolved);
         
         // Fetch available models asynchronously
         _ = FetchModelsAsync();

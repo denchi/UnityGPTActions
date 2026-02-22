@@ -3,6 +3,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
 from sentence_transformers import SentenceTransformer
+import argparse
 import faiss
 import numpy as np
 import json
@@ -80,5 +81,9 @@ app = Starlette(routes=[
 
 # Start the server
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8000)
+    args = parser.parse_args()
+    uvicorn.run(app, host=args.host, port=args.port)
 # ------------------------

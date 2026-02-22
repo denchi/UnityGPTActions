@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using DeathByGravity.GPTActions;
 using GPTUnity.Indexing;
@@ -17,12 +18,14 @@ namespace GPTUnity.Data
         private static bool _searchAvailable;
         private static bool _searchStatusKnown;
         private static string _lastSearchHost;
+        private static bool _lastSearchAutoHost;
         private static bool _mcpBridgeChecking;
         private static bool _mcpBridgeAvailable;
         private static bool _mcpServerChecking;
         private static bool _mcpServerAvailable;
         private static bool _mcpStatusKnown;
         private static string _lastMcpBridgeUrl;
+        private static bool _lastMcpBridgeAutoUrl;
         private static string _lastMcpServerUrl;
         private static bool _mcpAutoRetryEnabled;
         private static double _mcpRetryUntil;
@@ -44,15 +47,19 @@ namespace GPTUnity.Data
                     EditorGUI.BeginChangeCheck();
 
                     // Color fields
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    EditorGUILayout.LabelField("Colors", EditorStyles.boldLabel);
                     var newColorBackgroundUser =
                         EditorGUILayout.ColorField("User Background Color", settings.ColorBackgroundUser);
                     var newColorBackgroundAssistant = EditorGUILayout.ColorField("Assistant Background Color",
                         settings.ColorBackgroundAssistant);
                     var newColorChatBackground =
                         EditorGUILayout.ColorField("Chat Background Color", settings.ColorChatBackground);
-                    
+                    EditorGUILayout.EndVertical();
+
                     // Common settings
                     EditorGUILayout.Space();
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.LabelField("Common Configs", EditorStyles.boldLabel);
                     var commonPythonPath = ChatSettings.NormalizeLibraryPyRelative(EditorGUILayout.TextField("Python Path", settings.McpPythonPath));
                     var commonEnvPath = ChatSettings.NormalizeLibraryPyRelative(EditorGUILayout.TextField("Python Env Path", settings.McpEnvPath));
@@ -68,68 +75,89 @@ namespace GPTUnity.Data
                     {
                         TryWipeEnvironment(settings, settings.McpEnvPath, "Python");
                     }
+                    EditorGUILayout.EndVertical();
                     
                     // Search API settings
                     EditorGUILayout.Space();
-                    EditorGUILayout.LabelField("Search API Settings", EditorStyles.boldLabel);
-                    settings.SearchApiHost = DrawStatusInlineTextField(
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    EditorGUILayout.LabelField("Search", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField("Indexing + semantic search service settings.", EditorStyles.miniLabel);
+                    settings.SearchApiHost = DrawStatusInlineTextFieldWithAuto(
                         "Search API Host",
                         settings.SearchApiHost,
+                        settings.SearchApiAutoHost,
+                        out var searchAutoHost,
+                        GetAutoDisplayUrl(settings.SearchApiHostResolved),
                         _searchAvailable,
                         _searchChecking,
                         _searchStatusKnown);
-                    if (_lastSearchHost != settings.SearchApiHost)
+                    settings.SearchApiAutoHost = searchAutoHost;
+
+                    if (_lastSearchHost != settings.SearchApiHost || _lastSearchAutoHost != settings.SearchApiAutoHost)
                     {
                         _lastSearchHost = settings.SearchApiHost;
+                        _lastSearchAutoHost = settings.SearchApiAutoHost;
                         _searchStatusKnown = false;
                     }
-                    
+
                     if (!_searchChecking && !_searchStatusKnown)
                     {
                         CheckSearchStatusAsync(settings);
                     }
-                    
+
                     if (GUILayout.Button("Create a new index"))
                     {
                         ExtractorRunner.RunExtractor(settings);
                         ExtractorRunner.RunIndexer(settings);
                     }
-                    
-                    GUILayout.Space(10);
-                    
+
+                    GUILayout.Space(4);
+
                     if (GUILayout.Button("Start Server"))
                     {
                         // Run the check asynchronously to avoid blocking the main thread
                         StartServerAsync(settings);
                     }
-                    
+
                     if (GUILayout.Button("Stop Server"))
                     {
                         // Run the check asynchronously to avoid blocking the main thread
                         StopServerAsync(settings);
                     }
-                    
+
+                    EditorGUILayout.EndVertical();
+
                     // MCP settings
                     EditorGUILayout.Space();
-                    EditorGUILayout.LabelField("MCP Settings", EditorStyles.boldLabel);
-                    settings.McpBridgeUrl = DrawStatusInlineTextField(
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    EditorGUILayout.LabelField("MCP", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField("Bridge + MCP protocol server settings.", EditorStyles.miniLabel);
+                    settings.McpBridgeUrl = DrawStatusInlineTextFieldWithAuto(
                         "MCP Bridge URL",
                         settings.McpBridgeUrl,
+                        settings.McpBridgeAutoUrl,
+                        out var mcpBridgeAutoUrl,
+                        GetAutoDisplayUrl(settings.McpBridgeUrlResolved),
                         _mcpBridgeAvailable,
                         _mcpBridgeChecking,
                         _mcpStatusKnown);
+                    settings.McpBridgeAutoUrl = mcpBridgeAutoUrl;
                     settings.McpServerUrl = DrawStatusInlineTextField(
                         "MCP Server URL",
                         settings.McpServerUrl,
                         _mcpServerAvailable,
                         _mcpServerChecking,
                         _mcpStatusKnown);
+                    EditorGUILayout.LabelField("MCP Runtime Mode", Mcp.McpServerController.IsHubMode ? "HUB" : "STANDALONE");
                     settings.McpAutoStart = EditorGUILayout.Toggle("MCP Autostart", settings.McpAutoStart);
                     settings.McpUseUpdateQueue = EditorGUILayout.Toggle("MCP Use Update Queue", settings.McpUseUpdateQueue);
-                    
-                    if (_lastMcpBridgeUrl != settings.McpBridgeUrl || _lastMcpServerUrl != settings.McpServerUrl)
+
+                    if (_lastMcpBridgeUrl != settings.McpBridgeUrl ||
+                        _lastMcpBridgeAutoUrl != settings.McpBridgeAutoUrl ||
+                        _lastMcpServerUrl != settings.McpServerUrl)
                     {
                         _lastMcpBridgeUrl = settings.McpBridgeUrl;
+                        _lastMcpBridgeAutoUrl = settings.McpBridgeAutoUrl;
                         _lastMcpServerUrl = settings.McpServerUrl;
                         _mcpStatusKnown = false;
                     }
@@ -139,7 +167,7 @@ namespace GPTUnity.Data
                         CheckMcpStatusAsync(settings);
                     }
 
-                    GUILayout.Space(10);
+                    GUILayout.Space(4);
 
                     if (GUILayout.Button("Start MCP Server"))
                     {
@@ -149,8 +177,8 @@ namespace GPTUnity.Data
                         _mcpStatusKnown = false;
                         _mcpAutoRetryEnabled = true;
                         _mcpRetryUntil = EditorApplication.timeSinceStartup + 10.0;
-                    }                                    
-                    
+                    }
+
                     if (GUILayout.Button("Stop MCP Server"))
                     {
                         Mcp.McpServerController.StopAll();
@@ -162,11 +190,12 @@ namespace GPTUnity.Data
                         _mcpStatusKnown = true;
                         _mcpAutoRetryEnabled = false;
                     }
-                    
+
                     if (GUILayout.Button("Refresh MCP Status"))
                     {
                         CheckMcpStatusAsync(settings);
                     }
+                    EditorGUILayout.EndVertical();
 
                     if (EditorGUI.EndChangeCheck())
                     {
@@ -200,7 +229,7 @@ namespace GPTUnity.Data
             else
             {
                 // If the window or client is not available, create a new client
-                var client = new DeepSearchClient(settings.SearchApiHost, settings.SearchApiPythonPathResolved);
+                var client = new DeepSearchClient(settings.SearchApiHostResolved, settings.SearchApiPythonPathResolved);
                 try
                 {
                     isAvailable = await client.IsServerAvailable();
@@ -226,7 +255,7 @@ namespace GPTUnity.Data
                 using (var client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromSeconds(2);
-                    var response = await client.GetAsync(settings.SearchApiHost.TrimEnd('/') + "/ping");
+                    var response = await client.GetAsync(settings.SearchApiHostResolved.TrimEnd('/') + "/ping");
                     _searchAvailable = response.IsSuccessStatusCode;
                 }
             }
@@ -255,7 +284,7 @@ namespace GPTUnity.Data
                 using (var client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromSeconds(2);
-                    var bridgeUrl = settings.McpBridgeUrl.TrimEnd('/') + "/health";
+                    var bridgeUrl = settings.McpBridgeUrlResolved.TrimEnd('/') + "/health";
                     var bridgeResponse = await client.GetAsync(bridgeUrl);
                     _mcpBridgeAvailable = bridgeResponse.IsSuccessStatusCode;
                 }
@@ -377,6 +406,64 @@ namespace GPTUnity.Data
             EditorGUILayout.EndHorizontal();
 
             return value;
+        }
+
+        private static string DrawStatusInlineTextFieldWithAuto(
+            string label,
+            string configuredValue,
+            bool autoEnabled,
+            out bool newAutoEnabled,
+            string autoDisplayValue,
+            bool isOnline,
+            bool isChecking,
+            bool statusKnown)
+        {
+            var statusText = isChecking
+                ? "Checking..."
+                : statusKnown
+                    ? (isOnline ? "Online" : "Offline")
+                    : "Unknown";
+
+            var color = isChecking
+                ? new Color(1f, 0.75f, 0.2f)
+                : statusKnown
+                    ? (isOnline ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.9f, 0.2f, 0.2f))
+                    : new Color(0.7f, 0.7f, 0.7f);
+
+            var style = new GUIStyle(EditorStyles.label)
+            {
+                normal = { textColor = color }
+            };
+
+            EditorGUILayout.BeginHorizontal();
+            using (new EditorGUI.DisabledScope(autoEnabled))
+            {
+                var shownValue = autoEnabled ? (autoDisplayValue ?? string.Empty) : configuredValue;
+                var editedValue = EditorGUILayout.TextField(label, shownValue);
+                if (!autoEnabled)
+                {
+                    configuredValue = editedValue;
+                }
+            }
+            newAutoEnabled = GUILayout.Toggle(autoEnabled, "Auto", GUILayout.Width(54));
+            EditorGUILayout.LabelField(statusText, style, GUILayout.Width(90));
+            EditorGUILayout.EndHorizontal();
+
+            return configuredValue;
+        }
+
+        private static string GetAutoDisplayUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return string.Empty;
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                return string.Empty;
+
+            if (!IPAddress.TryParse(uri.Host, out _))
+                return string.Empty;
+
+            return $"{uri.Scheme}://{uri.Host}:{uri.Port}";
         }
 
         private static bool EnsureSearchEnvironment(ChatSettings settings)

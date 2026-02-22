@@ -14,6 +14,7 @@ namespace GPTUnity.Settings
         
         [Header("Search Api Settings")]
         [SerializeField] private string _searchApiHost = "http://127.0.0.1:8000";
+        [SerializeField] private bool _searchApiAutoHost = true;
 
         [Header("Python Settings")]
         [SerializeField] private string _pythonPath = "venv_mcp/bin/python3";
@@ -22,6 +23,7 @@ namespace GPTUnity.Settings
         
         [Header("MCP Settings")]
         [SerializeField] private string _mcpBridgeUrl = "http://127.0.0.1:7071";
+        [SerializeField] private bool _mcpBridgeAutoUrl = true;
         [SerializeField] private string _mcpServerUrl = "http://127.0.0.1:7072/mcp";
         [SerializeField] private bool _mcpAutoStart = true;
         [SerializeField] private bool _mcpUseUpdateQueue = true;
@@ -50,6 +52,12 @@ namespace GPTUnity.Settings
             set { _searchApiHost = value; }
         }
 
+        public bool SearchApiAutoHost
+        {
+            get { return _searchApiAutoHost; }
+            set { _searchApiAutoHost = value; }
+        }
+
         public string SearchApiPythonPath
         {
             get { return _pythonPath; }
@@ -72,6 +80,12 @@ namespace GPTUnity.Settings
         {
             get { return _mcpBridgeUrl; }
             set { _mcpBridgeUrl = value; }
+        }
+
+        public bool McpBridgeAutoUrl
+        {
+            get { return _mcpBridgeAutoUrl; }
+            set { _mcpBridgeAutoUrl = value; }
         }
 
         public string McpServerUrl
@@ -112,6 +126,8 @@ namespace GPTUnity.Settings
 
         public string SearchApiPythonPathResolved => ResolveLibraryPyPath(_pythonPath);
         public string SearchApiEnvPathResolved => ResolveLibraryPyPath(_envPath);
+        public string SearchApiHostResolved => LocalServiceEndpointResolver.ResolveSearchApiHost(this);
+        public string McpBridgeUrlResolved => LocalServiceEndpointResolver.ResolveMcpBridgeUrl(this);
         public string McpPythonPathResolved => ResolveLibraryPyPath(_pythonPath);
         public string McpEnvPathResolved => ResolveLibraryPyPath(_envPath);
 

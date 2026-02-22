@@ -14,8 +14,19 @@ namespace DeathByGravity.GPTActions
         // private static readonly string pythonExe = "/Users/denis/dev/ChatGptAssistant/Library/py/search/bin/python3";
 
         [MenuItem("Tools/Unity Assistant/Run Extractor")]
+        public static void RunExtractor()
+        {
+            RunExtractor(ChatSettings.instance);
+        }
+
         public static void RunExtractor(ChatSettings settings)
         {
+            if (settings == null)
+            {
+                Debug.LogError("[Indexer] ChatSettings.instance is null.");
+                return;
+            }
+
             string pythonExe = settings.SearchApiPythonPathResolved;
             string extractorPath = Path.GetFullPath(
                 "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/extract_all.py"
@@ -63,8 +74,19 @@ namespace DeathByGravity.GPTActions
         }
         
         [MenuItem("Tools/Unity Assistant/Run Indexer")]
+        public static void RunIndexer()
+        {
+            RunIndexer(ChatSettings.instance);
+        }
+
         public static void RunIndexer(ChatSettings settings)
         {
+            if (settings == null)
+            {
+                Debug.LogError("[Indexer] ChatSettings.instance is null.");
+                return;
+            }
+
             string pythonExe = settings.SearchApiPythonPathResolved;
             string extractorPath = Path.GetFullPath(
                 "Packages/com.deathbygravitystudio.gptactions/Editor/Extractor/index_all.py"

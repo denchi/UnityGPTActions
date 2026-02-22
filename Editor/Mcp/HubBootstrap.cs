@@ -15,8 +15,13 @@ namespace Mcp
                 return;
             }
 
-            McpServerController.StartAll(settings);
-            Debug.Log("[MCP] HubBootstrap started MCP services.");
+            if (McpServerController.StartAll(settings))
+            {
+                Debug.Log("[MCP] HubBootstrap started MCP services.");
+                return;
+            }
+
+            Debug.LogError("[MCP] HubBootstrap failed to start MCP services.");
         }
     }
 }

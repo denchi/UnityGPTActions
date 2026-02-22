@@ -47,8 +47,14 @@ namespace GPTUnity.Indexing
             
             var packageRoot = Path.GetFullPath($"Packages/{PackageId}");
             var searchApiScript = Path.Combine(packageRoot, "Editor/Extractor/search_api.py");
+            if (!TryParseHostAndPort(_host, out var host, out var port))
+            {
+                host = "127.0.0.1";
+                port = 8000;
+            }
 
-            var startInfo = new ProcessStartInfo(_pythonExe, $"\"{searchApiScript}\"")
+            var startArgs = $"\"{searchApiScript}\" --host \"{host}\" --port {port}";
+            var startInfo = new ProcessStartInfo(_pythonExe, startArgs)
             {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -189,6 +195,22 @@ namespace GPTUnity.Indexing
                 Debug.LogError($"[DeepSearchClient] HTTP request failed: {e.Message}");
                 return new List<SearchResult>();
             }
+        }
+
+        private static bool TryParseHostAndPort(string hostUrl, out string host, out int port)
+        {
+            host = "127.0.0.1";
+            port = 8000;
+
+            if (string.IsNullOrWhiteSpace(hostUrl))
+                return false;
+
+            if (!Uri.TryCreate(hostUrl, UriKind.Absolute, out var uri))
+                return false;
+
+            host = uri.Host;
+            port = uri.Port;
+            return port > 0;
         }
     }
 }

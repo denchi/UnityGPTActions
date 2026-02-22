@@ -16,6 +16,9 @@ namespace Mcp
     public static class McpServerController
     {
         private static Process _pythonProcess;
+        public static bool IsHubMode { get; private set; }
+        public static string ActiveBridgeUrl { get; private set; } = string.Empty;
+        public static string ActiveMcpServerUrl { get; private set; } = string.Empty;
 
         static McpServerController()
         {
@@ -23,17 +26,29 @@ namespace Mcp
             EditorApplication.quitting += StopAll;
         }
 
-        public static void StartAll(ChatSettings settings)
+        public static bool StartAll(ChatSettings settings)
         {
             if (settings == null)
             {
                 Debug.LogError("[MCP] ChatSettings missing.");
-                return;
+                return false;
             }
 
-            McpBridgeServer.Start(settings.McpBridgeUrl);
-            StartPythonServer(settings);
+            if (!TryResolveRuntimeUrls(settings, out var bridgeUrl, out var serverUrl, out var isHubMode))
+            {
+                return false;
+            }
+
+            IsHubMode = isHubMode;
+            ActiveBridgeUrl = bridgeUrl;
+            ActiveMcpServerUrl = serverUrl;
+
+            Debug.Log($"[MCP] Runtime mode: {(IsHubMode ? "HUB" : "STANDALONE")}. bridge={ActiveBridgeUrl} server={ActiveMcpServerUrl}");
+
+            McpBridgeServer.Start(ActiveBridgeUrl);
+            StartPythonServer(settings, ActiveBridgeUrl, ActiveMcpServerUrl);
             HubAgentRegistrar.Start(settings);
+            return true;
         }
 
         public static void StopAll()
@@ -41,6 +56,9 @@ namespace Mcp
             HubAgentRegistrar.Stop();
             StopPythonServer(ChatSettings.instance);
             McpBridgeServer.Stop();
+            ActiveBridgeUrl = string.Empty;
+            ActiveMcpServerUrl = string.Empty;
+            IsHubMode = false;
         }
 
         private static void TryAutoStart()
@@ -58,7 +76,7 @@ namespace Mcp
             StartAll(settings);
         }
 
-        private static void StartPythonServer(ChatSettings settings)
+        private static void StartPythonServer(ChatSettings settings, string runtimeBridgeUrl, string runtimeServerUrl)
         {
             if (_pythonProcess != null && !_pythonProcess.HasExited)
             {
@@ -89,9 +107,9 @@ namespace Mcp
                 pythonExe = "python3";
             }
 
-            if (!TryParseServerHost(settings.McpServerUrl, out var host, out var port))
+            if (!TryParseServerHost(runtimeServerUrl, out var host, out var port))
             {
-                Debug.LogError($"[MCP] Invalid MCP Server URL: {settings.McpServerUrl}");
+                Debug.LogError($"[MCP] Invalid MCP Server URL: {runtimeServerUrl}");
                 return;
             }
 
@@ -101,7 +119,7 @@ namespace Mcp
                 return;
             }
 
-            var args = $"\"{scriptPath}\" --unity-url \"{settings.McpBridgeUrl}\" --host \"{host}\" --port {port}";
+            var args = $"\"{scriptPath}\" --unity-url \"{runtimeBridgeUrl}\" --host \"{host}\" --port {port}";
             var startInfo = new ProcessStartInfo(pythonExe, args)
             {
                 UseShellExecute = false,
@@ -122,7 +140,76 @@ namespace Mcp
             _pythonProcess.BeginOutputReadLine();
             _pythonProcess.BeginErrorReadLine();
 
-            Debug.Log($"[MCP] MCP server starting: {settings.McpPythonPathResolved} {args}");
+            Debug.Log($"[MCP] MCP server starting: {pythonExe} {args}");
+        }
+
+        private static bool TryResolveRuntimeUrls(
+            ChatSettings settings,
+            out string bridgeUrl,
+            out string serverUrl,
+            out bool isHubMode)
+        {
+            bridgeUrl = settings.McpBridgeUrlResolved;
+            serverUrl = settings.McpServerUrl;
+            var modeRaw = (Environment.GetEnvironmentVariable("UNITY_MCP_MODE") ?? string.Empty).Trim();
+            var hasHubSession = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITY_MCP_SESSION_ID"));
+            var hasHubToken = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITY_MCP_HUB_TOKEN"));
+            var hubServerUrl = (Environment.GetEnvironmentVariable("UNITY_MCP_SERVER_URL") ?? string.Empty).Trim();
+            var explicitHubMode = string.Equals(modeRaw, "hub", StringComparison.OrdinalIgnoreCase);
+
+            isHubMode = explicitHubMode || (hasHubSession && hasHubToken && !string.IsNullOrWhiteSpace(hubServerUrl));
+
+            if (isHubMode)
+            {
+                if (string.IsNullOrWhiteSpace(hubServerUrl))
+                {
+                    Debug.LogWarning("[MCP] Hub mode requested but UNITY_MCP_SERVER_URL is missing. Falling back to standalone mode.");
+                    isHubMode = false;
+                }
+                else
+                {
+                    serverUrl = EnsureMcpPath(hubServerUrl);
+
+                    var hubBridgeUrl = (Environment.GetEnvironmentVariable("UNITY_MCP_BRIDGE_URL") ?? string.Empty).Trim();
+                    if (!string.IsNullOrWhiteSpace(hubBridgeUrl))
+                    {
+                        bridgeUrl = hubBridgeUrl.TrimEnd('/');
+                    }
+                }
+            }
+
+            serverUrl = EnsureMcpPath(serverUrl);
+
+            if (string.IsNullOrWhiteSpace(bridgeUrl))
+            {
+                Debug.LogError("[MCP] Resolved bridge URL is empty.");
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(serverUrl))
+            {
+                Debug.LogError("[MCP] Resolved server URL is empty.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static string EnsureMcpPath(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                return url;
+
+            var path = (uri.AbsolutePath ?? string.Empty).TrimEnd('/');
+            if (path.EndsWith("/mcp", StringComparison.OrdinalIgnoreCase))
+                return uri.GetLeftPart(UriPartial.Path).TrimEnd('/');
+
+            var builder = new UriBuilder(uri)
+            {
+                Path = "/mcp"
+            };
+
+            return builder.Uri.ToString().TrimEnd('/');
         }
 
         private static void StopPythonServer(ChatSettings settings)
@@ -203,7 +290,11 @@ namespace Mcp
             if (settings == null)
                 return;
 
-            if (!TryParseServerHost(settings.McpServerUrl, out var host, out var port))
+            var activeServerUrl = !string.IsNullOrWhiteSpace(ActiveMcpServerUrl)
+                ? ActiveMcpServerUrl
+                : settings.McpServerUrl;
+
+            if (!TryParseServerHost(activeServerUrl, out var host, out var port))
                 return;
 
             var shutdownUrl = $"http://{host}:{port}/mcp/shutdown";

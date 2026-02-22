@@ -40,8 +40,15 @@ namespace Mcp
                 return;
             }
 
-            _agentEndpoint = ResolveAgentEndpoint(settings?.McpServerUrl);
-            _bridgeUrl = settings?.McpBridgeUrl ?? string.Empty;
+            _agentEndpoint = ResolveAgentEndpoint(McpServerController.ActiveMcpServerUrl);
+            if (string.IsNullOrWhiteSpace(_agentEndpoint))
+            {
+                _agentEndpoint = ResolveAgentEndpoint(settings?.McpServerUrl);
+            }
+
+            _bridgeUrl = !string.IsNullOrWhiteSpace(McpServerController.ActiveBridgeUrl)
+                ? McpServerController.ActiveBridgeUrl
+                : settings?.McpBridgeUrlResolved ?? string.Empty;
             if (string.IsNullOrWhiteSpace(_agentEndpoint))
             {
                 Debug.LogWarning("[MCP] Hub registrar skipped: could not resolve agent endpoint from MCP Server URL.");
@@ -51,7 +58,7 @@ namespace Mcp
             _enabled = true;
             _nextRegisterAt = EditorApplication.timeSinceStartup + 0.5;
             EditorApplication.update += OnEditorUpdate;
-            Debug.Log("[MCP] Hub registrar enabled for session " + _sessionId);
+            Debug.Log("[MCP] Hub registrar enabled for session " + _sessionId + " (mode=" + (McpServerController.IsHubMode ? "HUB" : "STANDALONE") + ")");
         }
 
         public static void Stop()
@@ -120,6 +127,7 @@ namespace Mcp
                     tool_manifest = new ToolManifest
                     {
                         source = "unity-python-mcp",
+                        mode = McpServerController.IsHubMode ? "hub" : "standalone",
                         mcp_url = BuildUrl(_agentEndpoint, "/mcp"),
                         sse_url = BuildUrl(_agentEndpoint, "/mcp/sse"),
                         health_url = BuildUrl(_agentEndpoint, "/mcp/health"),
@@ -286,6 +294,7 @@ namespace Mcp
         private sealed class ToolManifest
         {
             public string source;
+            public string mode;
             public string mcp_url;
             public string sse_url;
             public string health_url;
