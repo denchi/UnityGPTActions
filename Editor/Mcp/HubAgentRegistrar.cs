@@ -205,6 +205,13 @@ namespace Mcp
                         {
                             var body = await response.Content.ReadAsStringAsync();
                             Debug.LogWarning($"[MCP] Hub heartbeat failed ({(int)response.StatusCode}): {body}");
+                            var statusCode = (int)response.StatusCode;
+                            if (statusCode == 401 || statusCode == 404 || statusCode == 409 || statusCode == 410)
+                            {
+                                Debug.Log("[MCP] Hub registrar stopping heartbeats for dead/invalid session.");
+                                RequestStop();
+                                return;
+                            }
                         }
                     }
                 }
@@ -281,6 +288,12 @@ namespace Mcp
             var b = (baseUrl ?? string.Empty).TrimEnd('/');
             var p = (path ?? string.Empty).TrimStart('/');
             return b + "/" + p;
+        }
+
+        private static void RequestStop()
+        {
+            _enabled = false;
+            EditorApplication.delayCall += Stop;
         }
 
         private sealed class RegisterAgentRequest
