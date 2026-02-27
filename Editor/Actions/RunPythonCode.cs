@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using GPTUnity.Actions.Interfaces;
@@ -30,7 +32,7 @@ namespace GPTUnity.Actions
                 var pkgs = Requirements.Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var pkg in pkgs)
                 {
-                    TryRunPythonCode($"import pip; pip.main(['install', '{pkg}'])");
+                    TryInstallRequirement(pkg);
                 }
             }
 
@@ -48,21 +50,118 @@ namespace GPTUnity.Actions
         private string TryRunPythonCode(string code)
         {
             var type = Type.GetType("UnityEditor.Scripting.Python.PythonRunner, Unity.Scripting.Python.Editor");
-            if (type == null)
+            if (type != null)
             {
-                throw new Exception("PythonRunner not available. Make sure 'com.unity.scripting.python' is installed.");
+                var method = type.GetMethod("RunString", BindingFlags.Static | BindingFlags.Public);
+                if (method != null)
+                {
+                    method.Invoke(null, new object[] { code, null });
+                    return "Code executed successfully (Unity PythonRunner).";
+                }
             }
 
-            var method = type.GetMethod("RunString", BindingFlags.Static | BindingFlags.Public);
-            if (method == null)
+            var fallbackResult = TryRunWithExternalPython(code);
+            return $"Code executed successfully (external python). Output:\n{fallbackResult}";
+        }
+
+        private void TryInstallRequirement(string packageName)
+        {
+            var type = Type.GetType("UnityEditor.Scripting.Python.PythonRunner, Unity.Scripting.Python.Editor");
+            if (type != null)
             {
-                throw new Exception("PythonRunner.RunString method not found.");
+                var method = type.GetMethod("RunString", BindingFlags.Static | BindingFlags.Public);
+                if (method != null)
+                {
+                    method.Invoke(null, new object[] { $"import pip; pip.main(['install', '{packageName}'])", null });
+                    return;
+                }
             }
-            
-            // Pass both parameters: code and null for scopeName
-            method.Invoke(null, new object[] { code, null });
-            
-            return "Code executed successfully!";
+
+            // External python fallback
+            var command = $"-m pip install {packageName}";
+            if (RunExternalProcess("python3", command, 120000, ignoreFailures: true) != null)
+                return;
+
+            if (RunExternalProcess("python", command, 120000, ignoreFailures: true) != null)
+                return;
+
+            throw new Exception(
+                $"Could not install python package '{packageName}'. PythonRunner and external python were unavailable.");
+        }
+
+        private string TryRunWithExternalPython(string code)
+        {
+            var tempFile = Path.Combine(Application.temporaryCachePath, $"gpt_python_{Guid.NewGuid():N}.py");
+            File.WriteAllText(tempFile, code ?? string.Empty);
+
+            try
+            {
+                var args = $"\"{tempFile}\"";
+                var output = RunExternalProcess("python3", args, 120000, ignoreFailures: true);
+                if (output != null)
+                    return output;
+
+                output = RunExternalProcess("python", args, 120000, ignoreFailures: true);
+                if (output != null)
+                    return output;
+            }
+            finally
+            {
+                if (File.Exists(tempFile))
+                    File.Delete(tempFile);
+            }
+
+            throw new Exception("PythonRunner not available and no external python executable ('python3'/'python') could run the script.");
+        }
+
+        private string RunExternalProcess(string executable, string arguments, int timeoutMs, bool ignoreFailures)
+        {
+            try
+            {
+                using (var process = new Process())
+                {
+                    process.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = executable,
+                        Arguments = arguments,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    process.Start();
+
+                    var stdOut = process.StandardOutput.ReadToEnd();
+                    var stdErr = process.StandardError.ReadToEnd();
+
+                    if (!process.WaitForExit(timeoutMs))
+                    {
+                        process.Kill();
+                        throw new Exception($"Process '{executable}' timed out.");
+                    }
+
+                    if (process.ExitCode != 0)
+                    {
+                        if (ignoreFailures)
+                            return null;
+
+                        throw new Exception($"Process '{executable}' failed with code {process.ExitCode}: {stdErr}");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(stdErr) && !ignoreFailures)
+                        return $"{stdOut}\n{stdErr}".Trim();
+
+                    return string.IsNullOrWhiteSpace(stdOut) ? "(no output)" : stdOut.Trim();
+                }
+            }
+            catch
+            {
+                if (ignoreFailures)
+                    return null;
+
+                throw;
+            }
         }
     }
 }

@@ -35,15 +35,22 @@ namespace GPTUnity.Actions
             if (!string.IsNullOrEmpty(TargetName))
             {
                 // Search for specific GameObject
-                if (UnityAiHelpers.TryFindGameObject(TargetName, out var target))
+                try
                 {
-                    sb.AppendLine($"Found GameObject '{TargetName}' in scene '{activeScene.name}':");
-                    DescribeGameObject(target, sb, "");
+                    if (UnityAiHelpers.TryFindGameObject(TargetName, out var target))
+                    {
+                        sb.AppendLine($"Found GameObject '{TargetName}' in scene '{activeScene.name}':");
+                        DescribeGameObject(target, sb, "");
+                    }
+                    else
+                    {
+                        sb.AppendLine(
+                            $"GameObject '{TargetName}' not found in scene '{activeScene.name}'.");
+                    }
                 }
-                else
+                catch (System.Exception ex)
                 {
-                    sb.AppendLine(
-                        $"GameObject '{TargetName}' not found in scene '{activeScene.name}'.");
+                    sb.AppendLine(ex.Message);
                 }
             }
             else if (!string.IsNullOrEmpty(TargetTypeName))

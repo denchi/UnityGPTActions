@@ -78,6 +78,12 @@ namespace GPTUnity.Actions
                 return true;
             }
 
+            // Prompt mode can block automation pipelines when dialogs are unavailable.
+            if (Application.isBatchMode)
+            {
+                return SaveCurrentModifiedScenes ? EditorSceneManager.SaveOpenScenes() : true;
+            }
+
             if (SaveCurrentModifiedScenes)
             {
                 return EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();

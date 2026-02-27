@@ -102,38 +102,48 @@ namespace GPTUnity.Helpers
                 gameObject = null;
                 return false;
             }
-            
-            // Try scene path (GameObject/Component)
-            if (path.Contains("/"))
+
+            var input = path.Trim();
+
+            if (TryFindByHierarchyPath(input, out gameObject))
+                return true;
+
+            var allObjects = GetAllGameObjectsInLoadedScenes();
+
+            var exactMatches = allObjects
+                .Where(go => string.Equals(go.name, input, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (exactMatches.Count == 1)
             {
-                var parts = path.TrimStart('/').Split('/');
-                var current = FindIncludingInactiveRootObjectInAllScenes(parts[0]);
-                if (current)
-                {
-                    var restOfThePath = string.Join("/", parts, 1, parts.Length - 1);
-                    var targetTransform = current.transform.Find(restOfThePath);
-                    if (targetTransform)
-                    {
-                        gameObject = targetTransform.gameObject;
-                        return true;
-                    }
-                }
-            } 
-            
-            // Find the gameobject even if it is deactivated
-            // This is a workaround for Unity's limitation in finding inactive GameObjects
-            // https://forum.unity.com/threads/how-to-find-inactive-gameobject-by-name.123456/
-            
-            gameObject = FindIncludingInactiveRootObjectInAllScenes(path);
-            
-            if (!gameObject)
-            {
-                var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(path);
-                throw new Exception($"Could not find game object: {path}. " +
-                                    $"However found similar objects: {string.Join(',', listOfSimilarGameObjects.Values) } instead!");
+                gameObject = exactMatches[0];
+                return true;
             }
-            
-            return gameObject;
+
+            if (exactMatches.Count > 1)
+            {
+                var exactPaths = exactMatches
+                    .Take(8)
+                    .Select(GetHierarchyPath);
+                throw new Exception(
+                    $"GameObject lookup '{path}' is ambiguous. Exact name matches: {string.Join(", ", exactPaths)}");
+            }
+
+            var listOfSimilarGameObjects = FindAllIncludingInactiveRootObjectInAllScenes(input);
+            if (listOfSimilarGameObjects.Count == 1)
+            {
+                gameObject = listOfSimilarGameObjects.First().Key;
+                return true;
+            }
+
+            if (listOfSimilarGameObjects.Count > 1)
+            {
+                var similar = listOfSimilarGameObjects.Values.Take(8);
+                throw new Exception(
+                    $"Could not find exact GameObject '{path}'. Similar matches: {string.Join(", ", similar)}");
+            }
+
+            throw new Exception($"Could not find game object: {path}.");
         }
         
         public static bool TryFindAsset(string path, Type type, out UnityEngine.Object asset)
@@ -282,6 +292,91 @@ namespace GPTUnity.Helpers
                    Type.GetType("UnityEngine." + typeName + ", UnityEngine");
             return type != null;
 #endif
+        }
+
+        private static bool TryFindByHierarchyPath(string path, out GameObject gameObject)
+        {
+            gameObject = null;
+            if (!path.Contains("/"))
+                return false;
+
+            var parts = path.Trim('/').Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return false;
+
+            var roots = FindAllIncludingInactiveRootObjectInAllScenes()
+                .Where(go => string.Equals(go.name, parts[0], StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var root in roots)
+            {
+                var current = root.transform;
+                var failed = false;
+
+                for (var i = 1; i < parts.Length; i++)
+                {
+                    Transform next = null;
+                    for (var c = 0; c < current.childCount; c++)
+                    {
+                        var candidate = current.GetChild(c);
+                        if (string.Equals(candidate.name, parts[i], StringComparison.OrdinalIgnoreCase))
+                        {
+                            next = candidate;
+                            break;
+                        }
+                    }
+
+                    if (next == null)
+                    {
+                        failed = true;
+                        break;
+                    }
+
+                    current = next;
+                }
+
+                if (!failed)
+                {
+                    gameObject = current.gameObject;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static List<GameObject> GetAllGameObjectsInLoadedScenes()
+        {
+            var result = new List<GameObject>();
+            var roots = FindAllIncludingInactiveRootObjectInAllScenes();
+            foreach (var root in roots)
+            {
+                Collect(root, result);
+            }
+
+            return result;
+        }
+
+        private static void Collect(GameObject gameObject, List<GameObject> output)
+        {
+            output.Add(gameObject);
+            for (var i = 0; i < gameObject.transform.childCount; i++)
+            {
+                Collect(gameObject.transform.GetChild(i).gameObject, output);
+            }
+        }
+
+        private static string GetHierarchyPath(GameObject gameObject)
+        {
+            var current = gameObject.transform;
+            var path = current.name;
+            while (current.parent != null)
+            {
+                current = current.parent;
+                path = $"{current.name}/{path}";
+            }
+
+            return "/" + path;
         }
     }
 }
