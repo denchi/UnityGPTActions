@@ -42,7 +42,7 @@ SERP_API_KEY=<optional_serpapi_key>
 
 1. Open **AI Chat** from `Window > AI Chat`.
 2. Enter a prompt or choose a template and let the assistant modify your project.
-3. Actions include spawning objects, adjusting serialized fields, generating code and more.
+3. Actions include spawning objects, editing component members or serialized property paths, generating code and more.
 
 ## Actions
 
@@ -61,11 +61,13 @@ The extension exposes the following actions:
 - [CreateLayerAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateLayerAction.cs)
 - [CreateMonoBehaviourAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateMonoBehaviourAction.cs)
 - [CreatePrefabAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreatePrefabAction.cs)
+- [CreatePrefabVariantAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreatePrefabVariantAction.cs)
 - [CreateScriptableObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateScriptableObjectAction.cs)
 - [CreateTagAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateTagAction.cs)
 - [CreateUnityAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateUnityAssetAction.cs)
 - [CreatesServiceScriptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreatesServiceScriptAction.cs)
 - [DescribeCSharpScriptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/DescribeCSharpScriptAction.cs)
+- [DuplicateHierarchyAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/DuplicateHierarchyAction.cs)
 - [DumpProjectSettingPropertiesAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/DumpProjectSettingPropertiesAction.cs)
 - [GenerateCSharpScriptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateCSharpScriptAction.cs)
 - [GenerateMaterialAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateMaterialAssetAction.cs)
@@ -75,16 +77,20 @@ The extension exposes the following actions:
 - [GenerateShaderAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateShaderAction.cs)
 - [GenerateSvgImageIgptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateSvgImageIgptAction.cs)
 - [GenerateTextureAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateTextureAssetAction.cs)
+- [GetComponentMemberAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetComponentMemberAction.cs)
 - [GetObjectBoundsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetObjectBoundsAction.cs)
 - [GetRectTransformPropertiesAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetRectTransformPropertiesAction.cs)
+- [GetSerializedPropertyByPathAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetSerializedPropertyByPathAction.cs)
 - [ListAllProjectSettingsAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ListAllProjectSettingsAssetsAction.cs)
 - [ModifyProjectSettingAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ModifyProjectSettingAction.cs)
 - [ParentGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ParentGameObjectAction.cs)
+- [PrefabOverrideAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/PrefabOverrideAction.cs)
 - [QueryAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryAssetsAction.cs)
 - [QueryCSharpClassesByParentTypeAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryCSharpClassesByParentTypeAction.cs)
 - [QueryInternetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryInternetAction.cs)
 - [QueryOpenedSceneAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryOpenedSceneAction.cs)
 - [RemovePackageAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RemovePackageAction.cs)
+- [ResolveObjectReferenceAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ResolveObjectReferenceAction.cs)
 - [RetrieveLayersAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveLayersAction.cs)
 - [RetrievePackagesAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrievePackagesAction.cs)
 - [RetrieveProjectInfoAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveProjectInfoAction.cs)
@@ -92,7 +98,10 @@ The extension exposes the following actions:
 - [RetrieveTagsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveTagsAction.cs)
 - [RunPythonCode](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RunPythonCode.cs)
 - [SelectAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SelectAssetsAction.cs)
+- [SetComponentMemberAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SetComponentMemberAction.cs)
+- [SetSerializedPropertyByPathAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SetSerializedPropertyByPathAction.cs)
 - [SpawnGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SpawnGameObjectAction.cs)
+- [BatchTransactionAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/BatchTransactionAction.cs)
 - [ToggleGameObjectActiveStateAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ToggleGameObjectActiveStateAction.cs)
 - [TransformGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/TransformGameObjectAction.cs)
 
