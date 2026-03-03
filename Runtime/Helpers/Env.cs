@@ -18,8 +18,10 @@ namespace Game.Environment
         {
             _envLoaded = false;
 
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             var paths = new[]
             {
+                Path.Combine(projectRoot, "UserSettings", ".env"),
                 Path.Combine(Application.streamingAssetsPath, ".env"),
             };
 

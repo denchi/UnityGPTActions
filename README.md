@@ -36,6 +36,8 @@ Create `Assets/StreamingAssets/.env` and define:
 ```
 OPENAI_API_KEY=<your_openai_key>
 SERP_API_KEY=<optional_serpapi_key>
+GOOGLE_CSE_API_KEY=<optional_google_api_key>
+GOOGLE_CSE_CX=<optional_google_search_engine_id>
 ```
 
 ## Usage
@@ -87,6 +89,7 @@ The extension exposes the following actions:
 - [PrefabOverrideAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/PrefabOverrideAction.cs)
 - [QueryAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryAssetsAction.cs)
 - [QueryCSharpClassesByParentTypeAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryCSharpClassesByParentTypeAction.cs)
+- [QueryAssetStoreAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryAssetStoreAction.cs)
 - [QueryInternetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryInternetAction.cs)
 - [QueryOpenedSceneAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryOpenedSceneAction.cs)
 - [RemovePackageAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RemovePackageAction.cs)
