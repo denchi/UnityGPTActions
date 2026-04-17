@@ -197,7 +197,7 @@ namespace DeathByGravity.GPTActions
 
             if (string.IsNullOrEmpty(venvFolder))
             {
-                Debug.LogError("[Indexer] Invalid Python path. Expected something like Library/py/search/bin/python3 or python3.");
+                Debug.LogError("[Indexer] Invalid Python path. Expected something like Library/py/search/bin/python3, Library/py/search/Scripts/python.exe, or python3.");
                 return false;
             }
 
@@ -219,16 +219,34 @@ namespace DeathByGravity.GPTActions
 
                     using (var process = Process.Start(startInfo))
                     {
+                        if (process == null)
+                        {
+                            Debug.LogError("[Indexer] Failed to start Python process for virtualenv creation.");
+                            return false;
+                        }
+
                         process.OutputDataReceived += Log;
                         process.ErrorDataReceived += LogError;
 
                         process.BeginOutputReadLine();
                         process.BeginErrorReadLine();
                         process.WaitForExit();
+
+                        if (process.ExitCode != 0)
+                        {
+                            Debug.LogError($"[Indexer] Virtualenv creation failed with exit code {process.ExitCode}.");
+                            return false;
+                        }
                     }
                 }
 
                 var venvPython = ResolveVenvPython(pythonPath, venvFolder);
+                if (!File.Exists(venvPython))
+                {
+                    Debug.LogError($"[Indexer] Virtualenv Python executable not found at: {venvPython}");
+                    return false;
+                }
+
                 if (requirePython310 && !PythonSupportsMcp(venvPython))
                 {
                     Debug.LogWarning("[Indexer] MCP requires Python >= 3.10. Configure MCP Python Path to a 3.10+ interpreter.");
@@ -259,12 +277,24 @@ namespace DeathByGravity.GPTActions
 
                 using (var pipProcess = Process.Start(pipStartInfo))
                 {
+                    if (pipProcess == null)
+                    {
+                        Debug.LogError("[Indexer] Failed to start pip install process.");
+                        return false;
+                    }
+
                     pipProcess.OutputDataReceived += Log;
                     pipProcess.ErrorDataReceived += LogError;
 
                     pipProcess.BeginOutputReadLine();
                     pipProcess.BeginErrorReadLine();
                     pipProcess.WaitForExit();
+
+                    if (pipProcess.ExitCode != 0)
+                    {
+                        Debug.LogError($"[Indexer] pip install failed with exit code {pipProcess.ExitCode}.");
+                        return false;
+                    }
                 }
 
                 var status = shouldCreateVenv ? "created and configured" : "updated";
@@ -323,30 +353,63 @@ namespace DeathByGravity.GPTActions
 
         private static string ResolveVenvFolder(string pythonPath, string defaultVenvName)
         {
+            var fallbackVenv = Path.GetFullPath(defaultVenvName);
             if (IsSimpleExecutableName(pythonPath))
             {
-                return Path.GetFullPath(defaultVenvName);
+                return fallbackVenv;
             }
 
             var pythonFile = Path.GetFullPath(pythonPath);
+            var normalized = pythonFile.Replace("\\", "/");
+            var looksLikeVenvPython =
+                normalized.EndsWith("/bin/python3", StringComparison.OrdinalIgnoreCase) ||
+                normalized.EndsWith("/bin/python", StringComparison.OrdinalIgnoreCase) ||
+                normalized.EndsWith("/scripts/python.exe", StringComparison.OrdinalIgnoreCase);
+
+            if (!looksLikeVenvPython)
+            {
+                // Absolute system interpreters (for example D:\Python\python.exe) should still create/use the configured venv folder.
+                return fallbackVenv;
+            }
+
             var pythonDir = Directory.GetParent(pythonFile);
-            return pythonDir?.Parent?.FullName;
+            return pythonDir?.Parent?.FullName ?? fallbackVenv;
         }
 
         private static string ResolveVenvPython(string pythonPath, string venvFolder)
         {
             if (IsSimpleExecutableName(pythonPath))
             {
-                return Path.Combine(venvFolder, "bin", "python3");
+                return GetVenvPythonExecutable(venvFolder);
             }
             
             var resolved = Path.GetFullPath(pythonPath);
-            if (resolved.StartsWith(venvFolder, StringComparison.Ordinal) && !File.Exists(resolved))
+            if (resolved.StartsWith(venvFolder, StringComparison.OrdinalIgnoreCase) && !File.Exists(resolved))
             {
-                return Path.Combine(venvFolder, "bin", "python3");
+                return GetVenvPythonExecutable(venvFolder);
             }
 
-            return resolved;
+            if (resolved.StartsWith(venvFolder, StringComparison.OrdinalIgnoreCase))
+            {
+                return resolved;
+            }
+
+            // If pythonPath points to a global/system interpreter, use the venv interpreter for installs and checks.
+            return GetVenvPythonExecutable(venvFolder);
+        }
+
+        private static string GetVenvPythonExecutable(string venvFolder)
+        {
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                return Path.Combine(venvFolder, "Scripts", "python.exe");
+            }
+
+            var python3 = Path.Combine(venvFolder, "bin", "python3");
+            if (File.Exists(python3))
+                return python3;
+
+            return Path.Combine(venvFolder, "bin", "python");
         }
 
         private static bool IsSimpleExecutableName(string pythonPath)
@@ -400,6 +463,12 @@ namespace DeathByGravity.GPTActions
 
         private static string[] GetInterpreterCandidates(bool requirePython310)
         {
+            var windowsBase = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var winPy313 = Path.Combine(windowsBase, "Programs", "Python", "Python313", "python.exe");
+            var winPy312 = Path.Combine(windowsBase, "Programs", "Python", "Python312", "python.exe");
+            var winPy311 = Path.Combine(windowsBase, "Programs", "Python", "Python311", "python.exe");
+            var winPy310 = Path.Combine(windowsBase, "Programs", "Python", "Python310", "python.exe");
+
             if (requirePython310)
             {
                 return new[]
@@ -419,7 +488,15 @@ namespace DeathByGravity.GPTActions
                     "/usr/local/bin/python3.12",
                     "/usr/local/bin/python3.11",
                     "/usr/local/bin/python3.10",
-                    "/usr/bin/python3"
+                    "/usr/bin/python3",
+                    winPy313,
+                    winPy312,
+                    winPy311,
+                    winPy310,
+                    @"C:\Python313\python.exe",
+                    @"C:\Python312\python.exe",
+                    @"C:\Python311\python.exe",
+                    @"C:\Python310\python.exe"
                 };
             }
 
@@ -428,7 +505,11 @@ namespace DeathByGravity.GPTActions
                 "python3",
                 "python",
                 "/opt/homebrew/bin/python3",
-                "/usr/local/bin/python3"
+                "/usr/local/bin/python3",
+                winPy313,
+                winPy312,
+                winPy311,
+                winPy310
             };
         }
 

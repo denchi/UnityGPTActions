@@ -103,8 +103,18 @@ namespace Mcp
             var pythonExe = ResolvePythonExecutable(settings.McpPythonPathResolved);
             if (!IsSimpleExecutableName(pythonExe) && !File.Exists(pythonExe))
             {
-                Debug.LogWarning($"[MCP] MCP Python path not found: {pythonExe}. Falling back to 'python3'.");
-                pythonExe = "python3";
+                var envPython = ResolveVenvPythonFromEnv(settings.McpEnvPathResolved);
+                if (!string.IsNullOrWhiteSpace(envPython))
+                {
+                    Debug.LogWarning($"[MCP] MCP Python path not found: {pythonExe}. Using venv interpreter '{envPython}'.");
+                    pythonExe = envPython;
+                }
+                else
+                {
+                    var fallback = string.IsNullOrWhiteSpace(settings.McpPythonFallback) ? "python3" : settings.McpPythonFallback;
+                    Debug.LogWarning($"[MCP] MCP Python path not found: {pythonExe}. Falling back to '{fallback}'.");
+                    pythonExe = fallback;
+                }
             }
 
             if (!TryParseServerHost(runtimeServerUrl, out var host, out var port))
@@ -330,6 +340,33 @@ namespace Mcp
                    pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
         }
 
+        private static string ResolveVenvPythonFromEnv(string envPath)
+        {
+            if (string.IsNullOrWhiteSpace(envPath))
+                return null;
+
+            var envFull = Path.GetFullPath(envPath);
+            if (!Directory.Exists(envFull))
+                return null;
+
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                var winPy = Path.Combine(envFull, "Scripts", "python.exe");
+                if (File.Exists(winPy))
+                    return winPy;
+            }
+
+            var unixPy3 = Path.Combine(envFull, "bin", "python3");
+            if (File.Exists(unixPy3))
+                return unixPy3;
+
+            var unixPy = Path.Combine(envFull, "bin", "python");
+            if (File.Exists(unixPy))
+                return unixPy;
+
+            return null;
+        }
+
         private static bool IsMcpEnvironmentReady(ChatSettings settings)
         {
             if (settings == null)
@@ -349,7 +386,10 @@ namespace Mcp
             if (IsSimpleExecutableName(pythonPath))
                 return true;
 
-            return File.Exists(Path.GetFullPath(pythonPath));
+            if (File.Exists(Path.GetFullPath(pythonPath)))
+                return true;
+
+            return !string.IsNullOrWhiteSpace(ResolveVenvPythonFromEnv(settings.McpEnvPathResolved));
         }
 
         private static void LogOutput(object sender, DataReceivedEventArgs e)
