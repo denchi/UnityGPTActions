@@ -113,13 +113,13 @@ namespace GPTUnity.Data
 
                     GUILayout.Space(4);
 
-                    if (GUILayout.Button("Start Server"))
+                    if (GUILayout.Button("Start Search Server"))
                     {
                         // Run the check asynchronously to avoid blocking the main thread
                         StartServerAsync(settings);
                     }
 
-                    if (GUILayout.Button("Stop Server"))
+                    if (GUILayout.Button("Stop Search Server"))
                     {
                         // Run the check asynchronously to avoid blocking the main thread
                         StopServerAsync(settings);
@@ -169,17 +169,23 @@ namespace GPTUnity.Data
 
                     GUILayout.Space(4);
 
-                    if (GUILayout.Button("Start MCP Server"))
+                    if (GUILayout.Button("Start MCP Services"))
                     {
-                        EnsureMcpEnvironment(settings);
-                        Mcp.McpServerController.StartAll(settings);
-                        // Trigger status refresh after start
-                        _mcpStatusKnown = false;
-                        _mcpAutoRetryEnabled = true;
-                        _mcpRetryUntil = EditorApplication.timeSinceStartup + 10.0;
+                        if (EnsureMcpEnvironment(settings))
+                        {
+                            Mcp.McpServerController.StartAll(settings);
+                            // Trigger status refresh after start
+                            _mcpStatusKnown = false;
+                            _mcpAutoRetryEnabled = true;
+                            _mcpRetryUntil = EditorApplication.timeSinceStartup + 10.0;
+                        }
+                        else
+                        {
+                            Debug.LogError("[ChatSettingsProvider] MCP environment setup failed. MCP server was not started.");
+                        }
                     }
 
-                    if (GUILayout.Button("Stop MCP Server"))
+                    if (GUILayout.Button("Stop MCP Services"))
                     {
                         Mcp.McpServerController.StopAll();
                         // Immediately reflect offline status
@@ -484,34 +490,11 @@ namespace GPTUnity.Data
             if (settings == null)
                 return false;
 
-            if (!IsPythonEnvMissing(settings.McpPythonPathResolved, settings.McpEnvPathResolved, ChatSettings.ResolveLibraryPyPath("venv_mcp")))
-                return false;
-
+            // Always ensure MCP dependencies are present, even when the virtualenv already exists.
             return ExtractorRunner.TryCreateMcpEnvironment(
                 settings.McpPythonPathResolved,
                 settings.McpEnvPathResolved,
                 settings.McpPythonFallback);
-        }
-
-        private static bool IsPythonEnvMissing(string pythonPath, string envPath, string defaultVenvName)
-        {
-            if (string.IsNullOrWhiteSpace(pythonPath))
-                return true;
-
-            if (!IsSimpleExecutableName(pythonPath))
-            {
-                var fullPath = Path.GetFullPath(pythonPath);
-                return !File.Exists(fullPath);
-            }
-
-            var venvPath = Path.GetFullPath(string.IsNullOrWhiteSpace(envPath) ? defaultVenvName : envPath);
-            return !Directory.Exists(venvPath);
-        }
-
-        private static bool IsSimpleExecutableName(string pythonPath)
-        {
-            return pythonPath.IndexOf(Path.DirectorySeparatorChar) == -1 &&
-                   pythonPath.IndexOf(Path.AltDirectorySeparatorChar) == -1;
         }
 
         private static void TryWipeEnvironment(ChatSettings settings, string envPath, string label)
@@ -549,7 +532,12 @@ namespace GPTUnity.Data
         
         private static async void StartServerAsync(ChatSettings settings)
         {
-            EnsureSearchEnvironment(settings);
+            if (!EnsureSearchEnvironment(settings))
+            {
+                Debug.LogError("[ChatSettingsProvider] Search environment setup failed. Search server was not started.");
+                return;
+            }
+
             bool isAvailable = false;
             
             var window = EditorWindow.GetWindow<ChatEditorWindow>();

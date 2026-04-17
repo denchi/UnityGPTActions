@@ -19,7 +19,7 @@ namespace GPTUnity.Settings
         [Header("Python Settings")]
         [SerializeField] private string _pythonPath = "venv_mcp/bin/python3";
         [SerializeField] private string _envPath = "venv_mcp";
-        [SerializeField] private string _pythonFallback = "python3.11";
+        [SerializeField] private string _pythonFallback = "python3";
         
         [Header("MCP Settings")]
         [SerializeField] private string _mcpBridgeUrl = "http://127.0.0.1:7071";

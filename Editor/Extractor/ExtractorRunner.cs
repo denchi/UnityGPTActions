@@ -153,7 +153,7 @@ namespace DeathByGravity.GPTActions
                 pythonFallback: pythonFallback);
         }
 
-        public static bool TryCreateMcpEnvironment(string pythonPath, string envPath = "Library/py/venv_mcp", string pythonFallback = "python3.11")
+        public static bool TryCreateMcpEnvironment(string pythonPath, string envPath = "Library/py/venv_mcp", string pythonFallback = "python3")
         {
             return CreateOrUpdatePythonEnvironment(
                 pythonPath,
@@ -197,7 +197,7 @@ namespace DeathByGravity.GPTActions
 
             if (string.IsNullOrEmpty(venvFolder))
             {
-                Debug.LogError("[Indexer] Invalid Python path. Expected something like Library/py/search/bin/python3 or python3.11.");
+                Debug.LogError("[Indexer] Invalid Python path. Expected something like Library/py/search/bin/python3 or python3.");
                 return false;
             }
 
@@ -269,7 +269,7 @@ namespace DeathByGravity.GPTActions
 
                 var status = shouldCreateVenv ? "created and configured" : "updated";
                 Debug.Log($"[Indexer] Python environment {status} at {venvFolder}");
-                return shouldCreateVenv;
+                return true;
             }
             catch (Exception e)
             {
@@ -357,7 +357,7 @@ namespace DeathByGravity.GPTActions
 
         private static string DeriveInterpreterFallback(bool requirePython310)
         {
-            return requirePython310 ? "python3.11" : "python3";
+            return "python3";
         }
 
         private static string ResolveInterpreterFallback(bool requirePython310, string pythonFallback)
@@ -404,13 +404,22 @@ namespace DeathByGravity.GPTActions
             {
                 return new[]
                 {
-                    "python3.11",
+                    "python3",
+                    "python",
+                    "py",
+                    "python3.13",
                     "python3.12",
+                    "python3.11",
                     "python3.10",
-                    "/opt/homebrew/bin/python3.11",
+                    "/opt/homebrew/bin/python3.13",
                     "/opt/homebrew/bin/python3.12",
+                    "/opt/homebrew/bin/python3.11",
+                    "/opt/homebrew/bin/python3.10",
+                    "/usr/local/bin/python3.13",
+                    "/usr/local/bin/python3.12",
                     "/usr/local/bin/python3.11",
-                    "/usr/local/bin/python3.12"
+                    "/usr/local/bin/python3.10",
+                    "/usr/bin/python3"
                 };
             }
 

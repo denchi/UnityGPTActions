@@ -2,137 +2,99 @@
 
 [![Unity 2021.2.3f1](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/denchi/UnityGPTActions/actions/workflows/tests.yml)
 
-## Supported Unity Versions
+Unity Editor tooling for AI-assisted project edits, deep search, and Unity MCP integration.
 
-This package is tested with **Unity 2021.2.3f1** and newer.
+## Requirements
 
-## Content
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Actions](#actions)
-- [Indexing](#indexing)
-- [Deep Search](#deep-search)
-- [Folders & Config](#folders--config)
-- [cURL Test](#curl-test)
-
-## Features
-
-- AI-powered chat window that can execute editor commands
-- Tools to create or modify assets, scripts and shaders
-- Retrieve project information like tags, layers and packages
-- Automate common Unity workflows directly from the chat
+- Unity **2021.2.3f1** or newer
+- Python **3.10+** for MCP features
+- OpenAI API key (for chat/features that call OpenAI)
 
 ## Installation
 
-Add the package to your `manifest.json`:
+Add the package to `Packages/manifest.json`.
+
+If the package repo root is the package itself:
 
 ```json
 "com.deathbygravitystudio.gptactions": "https://github.com/denchi/UnityGPTActions.git"
 ```
 
-Create `Assets/StreamingAssets/.env` and define:
+If the repo is a monorepo:
 
+```json
+"com.deathbygravitystudio.gptactions": "https://github.com/denchi/UnityGPTActions.git?path=/Packages/com.deathbygravitystudio.gptactions"
 ```
+
+Create `Assets/StreamingAssets/.env`:
+
+```dotenv
 OPENAI_API_KEY=<your_openai_key>
 SERP_API_KEY=<optional_serpapi_key>
 GOOGLE_CSE_API_KEY=<optional_google_api_key>
 GOOGLE_CSE_CX=<optional_google_search_engine_id>
 ```
 
+## First Run (New Machine)
+
+After Unity imports the package:
+
+1. Open `Project Settings > Chat Settings`.
+2. Verify Python settings in **Common Configs**.
+3. Click `Start Search Server` in the **Search** section.
+4. Click `Start MCP Services` in the **MCP** section.
+5. Confirm both status indicators become `Online`.
+
+Notes:
+- Search server setup installs indexing/search dependencies into your configured venv.
+- MCP setup now also ensures MCP dependencies even if the venv already existed.
+- `MCP Autostart` starts bridge + MCP server on editor launch when env is ready.
+
+## Which Server Does What?
+
+| Button | Service | Default URL | Needed for |
+| --- | --- | --- | --- |
+| `Start Search Server` | Deep Search API | `http://127.0.0.1:8000` | semantic search/index queries |
+| `Start MCP Services` | Unity MCP Bridge + MCP Python Server | bridge `http://127.0.0.1:7071`, server `http://127.0.0.1:7072/mcp` | MCP clients (Codex, external MCP tools) |
+
+If you only use local in-editor chat and do not use MCP clients, MCP server is optional.
+
+## Python Compatibility
+
+MCP requires Python >= 3.10. The setup flow tries common interpreter names and paths (`python3`, `python`, `py`, `python3.10+`) and validates the version before creating/updating the env.
+
+If no valid interpreter is found, install one and retry:
+
+- macOS (Homebrew): `brew install python@3.12`
+- Ubuntu/Debian: `sudo apt install python3 python3-venv python3-pip`
+- Windows (winget): `winget install Python.Python.3.12`
+
+## What To Commit / Push
+
+When adding this package to a Unity project, commit:
+
+- `Packages/manifest.json`
+- `Packages/packages-lock.json`
+
+Optionally commit if you want team-shared defaults:
+
+- `ProjectSettings/ChatSettings.asset`
+
+Never commit secrets/local runtime state:
+
+- `Assets/StreamingAssets/.env` (already ignored)
+- `Library/`, generated venvs, local machine-specific cache
+
 ## Usage
 
-1. Open **AI Chat** from `Window > AI Chat`.
-2. Enter a prompt or choose a template and let the assistant modify your project.
-3. Actions include spawning objects, editing component members or serialized property paths, generating code and more.
+Open **AI Chat** from `Window > AI Chat`.
 
-## Actions
+The assistant can execute editor actions (assets, hierarchy, scripts, settings, search). For the full action catalog, see:
 
-The extension exposes the following actions:
-- [AddPackageAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AddPackageAction.cs)
-- [AdjustRectTransformAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AdjustRectTransformAction.cs)
-- [AdjustSerializedFieldAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AdjustSerializedFieldAction.cs)
-- [AdjustUnityObjectFieldAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AdjustUnityObjectFieldAction.cs)
-- [ApplyMaterialAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ApplyMaterialAction.cs)
-- [AssignLayerAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AssignLayerAction.cs)
-- [AssignPrimitiveMeshAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AssignPrimitiveMeshAction.cs)
-- [AttachRemoveComponentAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/AttachRemoveComponentAction.cs)
-- [CreateAnimatorControllerAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateAnimatorControllerAction.cs)
-- [CreateCustomShaderFunction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateCustomShaderFunction.cs)
-- [CreateGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateGameObjectAction.cs)
-- [CreateLayerAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateLayerAction.cs)
-- [CreateMonoBehaviourAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateMonoBehaviourAction.cs)
-- [CreatePrefabAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreatePrefabAction.cs)
-- [CreatePrefabVariantAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreatePrefabVariantAction.cs)
-- [CreateScriptableObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateScriptableObjectAction.cs)
-- [CreateTagAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateTagAction.cs)
-- [CreateUnityAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreateUnityAssetAction.cs)
-- [CreatesServiceScriptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/CreatesServiceScriptAction.cs)
-- [DescribeCSharpScriptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/DescribeCSharpScriptAction.cs)
-- [DuplicateHierarchyAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/DuplicateHierarchyAction.cs)
-- [DumpProjectSettingPropertiesAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/DumpProjectSettingPropertiesAction.cs)
-- [GenerateCSharpScriptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateCSharpScriptAction.cs)
-- [GenerateMaterialAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateMaterialAssetAction.cs)
-- [GenerateMeshAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateMeshAssetAction.cs)
-- [GenerateRigidbodyAndColliderAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateRigidbodyAndColliderAction.cs)
-- [GenerateScriptableMenuAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateScriptableMenuAction.cs)
-- [GenerateShaderAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateShaderAction.cs)
-- [GenerateSvgImageIgptAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateSvgImageIgptAction.cs)
-- [GenerateTextureAssetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GenerateTextureAssetAction.cs)
-- [GetComponentMemberAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetComponentMemberAction.cs)
-- [GetObjectBoundsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetObjectBoundsAction.cs)
-- [GetRectTransformPropertiesAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetRectTransformPropertiesAction.cs)
-- [GetSerializedPropertyByPathAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/GetSerializedPropertyByPathAction.cs)
-- [ListAllProjectSettingsAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ListAllProjectSettingsAssetsAction.cs)
-- [ModifyProjectSettingAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ModifyProjectSettingAction.cs)
-- [ParentGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ParentGameObjectAction.cs)
-- [PrefabOverrideAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/PrefabOverrideAction.cs)
-- [QueryAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryAssetsAction.cs)
-- [QueryCSharpClassesByParentTypeAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryCSharpClassesByParentTypeAction.cs)
-- [QueryAssetStoreAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryAssetStoreAction.cs)
-- [QueryInternetAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryInternetAction.cs)
-- [QueryOpenedSceneAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/QueryOpenedSceneAction.cs)
-- [RemovePackageAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RemovePackageAction.cs)
-- [ResolveObjectReferenceAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ResolveObjectReferenceAction.cs)
-- [RetrieveLayersAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveLayersAction.cs)
-- [RetrievePackagesAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrievePackagesAction.cs)
-- [RetrieveProjectInfoAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveProjectInfoAction.cs)
-- [RetrieveProjectSettingAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveProjectSettingAction.cs)
-- [RetrieveTagsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RetrieveTagsAction.cs)
-- [RunPythonCode](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/RunPythonCode.cs)
-- [SelectAssetsAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SelectAssetsAction.cs)
-- [SetComponentMemberAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SetComponentMemberAction.cs)
-- [SetSerializedPropertyByPathAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SetSerializedPropertyByPathAction.cs)
-- [SpawnGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/SpawnGameObjectAction.cs)
-- [BatchTransactionAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/BatchTransactionAction.cs)
-- [ToggleGameObjectActiveStateAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/ToggleGameObjectActiveStateAction.cs)
-- [TransformGameObjectAction](https://github.com/denchi/UnityGPTActions/blob/main/Editor/Actions/TransformGameObjectAction.cs)
+- `Packages/com.deathbygravitystudio.gptactions/Editor/Actions/`
 
-## Indexing
+## Health Checks
 
-The package can index your project's assets and scripts to enable fast searching and context-aware actions. Indexing is performed automatically on startup or can be triggered manually from the AI Chat window. Indexed data includes file paths, script classes, asset types, and metadata.
-
-- **Manual Indexing:** Use the "Reindex Project" button in the AI Chat window.
-- **Automatic Indexing:** Occurs on package initialization or after major asset changes.
-
-## Deep Search
-
-Deep Search allows you to query across all indexed files, folders, and scripts using natural language or keywords. This feature supports advanced filtering and can locate code, assets, or configuration files based on your prompt.
-
-- **Usage:** Enter search queries in the AI Chat window.
-- **Supported Filters:** File type, folder, class name, asset type, and more.
-
-Testing:
-``` bash
-curl -X POST http://127.0.0.1:8000/search -H "Content-Type: application/json" -d '{"query": "bullet"}'
-```
-
-Kill:
-``` bash
-kill -9 $(lsof -t -i :8000)
-```
-
-Start:
-``` bash
-python3 -m http.server 8000
-```
+- Search API: `GET http://127.0.0.1:8000/ping`
+- MCP server: `GET http://127.0.0.1:7072/mcp/health`
+- MCP bridge: `GET http://127.0.0.1:7071/health`
