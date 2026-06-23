@@ -11,16 +11,50 @@ namespace Mcp
     public static class McpToolRegistry
     {
         private static readonly Type BaseActionType = typeof(GPTAssistantAction);
+        private static List<McpToolDefinition> _cachedToolDefinitions;
 
         public static List<McpToolDefinition> GetTools(bool enabledOnly = false)
         {
+            EnsureCache();
+
             var tools = new List<McpToolDefinition>();
             var settings = ChatSettings.instance;
-            foreach (var actionType in CollectActionTypes())
+            foreach (var tool in _cachedToolDefinitions)
             {
-                if (enabledOnly && settings != null && !settings.IsMcpToolEnabled(actionType.Name))
+                var isEnabled = settings == null || settings.IsMcpToolEnabled(tool.name);
+                if (enabledOnly && !isEnabled)
                     continue;
 
+                tools.Add(new McpToolDefinition
+                {
+                    name = tool.name,
+                    description = tool.description,
+                    inputSchema = tool.inputSchema,
+                    enabled = isEnabled
+                });
+            }
+
+            return tools.OrderBy(tool => tool.name).ToList();
+        }
+
+        public static void RefreshCache()
+        {
+            _cachedToolDefinitions = BuildToolDefinitions();
+        }
+
+        private static void EnsureCache()
+        {
+            if (_cachedToolDefinitions == null)
+            {
+                _cachedToolDefinitions = BuildToolDefinitions();
+            }
+        }
+
+        private static List<McpToolDefinition> BuildToolDefinitions()
+        {
+            var tools = new List<McpToolDefinition>();
+            foreach (var actionType in CollectActionTypes())
+            {
                 var description = GetTypeDescription(actionType);
                 var parameters = GetFunctionParameters(actionType);
                 var required = GetRequiredParameterNames(actionType);
@@ -37,7 +71,7 @@ namespace Mcp
                     name = actionType.Name,
                     description = description ?? "Dynamically discovered action class",
                     inputSchema = inputSchema,
-                    enabled = settings == null || settings.IsMcpToolEnabled(actionType.Name)
+                    enabled = true
                 });
             }
 

@@ -20,6 +20,9 @@ namespace GPTUnity.Data
         private static bool _searchStatusKnown;
         private static string _lastSearchHost;
         private static bool _lastSearchAutoHost;
+        private static bool _searchAutoRetryEnabled;
+        private static double _searchRetryUntil;
+        private static bool _searchRebuildInProgress;
         private static bool _mcpBridgeChecking;
         private static bool _mcpBridgeAvailable;
         private static bool _mcpServerChecking;
@@ -110,25 +113,11 @@ namespace GPTUnity.Data
                         CheckSearchStatusAsync(settings);
                     }
 
-                    if (GUILayout.Button("Create a new index"))
-                    {
-                        ExtractorRunner.RunExtractor(settings);
-                        ExtractorRunner.RunIndexer(settings);
-                    }
-
+                    DrawSearchStatusSummary();
                     GUILayout.Space(4);
-
-                    if (GUILayout.Button("Start Search Server"))
-                    {
-                        // Run the check asynchronously to avoid blocking the main thread
-                        StartServerAsync(settings);
-                    }
-
-                    if (GUILayout.Button("Stop Search Server"))
-                    {
-                        // Run the check asynchronously to avoid blocking the main thread
-                        StopServerAsync(settings);
-                    }
+                    DrawSearchControls(settings);
+                    GUILayout.Space(8);
+                    DrawSearchIndexControls(settings);
 
                     EditorGUILayout.EndVertical();
 
@@ -198,11 +187,10 @@ namespace GPTUnity.Data
         private static async void CheckSearchApiAvailableAsync(ChatSettings settings)
         {
             bool isAvailable = false;
-            
-            var window = EditorWindow.GetWindow<ChatEditorWindow>();
-            if (window != null && window.SearchApiClient != null)
+
+            var client = GetSearchApiClient(settings);
+            if (client != null)
             {
-                var client = window.SearchApiClient;
                 try
                 {
                     isAvailable = await client.IsServerAvailable();
@@ -210,19 +198,6 @@ namespace GPTUnity.Data
                 catch (Exception e)
                 {
                     Debug.LogError($"Error checking Search API availability: {e.Message}");
-                    isAvailable = false;
-                }
-            }
-            else
-            {
-                // If the window or client is not available, create a new client
-                var client = new DeepSearchClient(settings.SearchApiHostResolved, settings.SearchApiPythonPathResolved);
-                try
-                {
-                    isAvailable = await client.IsServerAvailable();
-                }
-                catch
-                {
                     isAvailable = false;
                 }
             }
@@ -319,23 +294,33 @@ namespace GPTUnity.Data
 
         private static void OnEditorUpdate()
         {
-            if (!_mcpAutoRetryEnabled)
-                return;
-
-            if (EditorApplication.timeSinceStartup > _mcpRetryUntil)
-            {
-                _mcpAutoRetryEnabled = false;
-                return;
-            }
-
-            if (_mcpBridgeChecking || _mcpServerChecking)
-                return;
-
             var settings = ChatSettings.instance;
             if (settings == null)
                 return;
 
-            CheckMcpStatusAsync(settings);
+            if (_searchAutoRetryEnabled)
+            {
+                if (EditorApplication.timeSinceStartup > _searchRetryUntil)
+                {
+                    _searchAutoRetryEnabled = false;
+                }
+                else if (!_searchChecking)
+                {
+                    CheckSearchStatusAsync(settings);
+                }
+            }
+
+            if (_mcpAutoRetryEnabled)
+            {
+                if (EditorApplication.timeSinceStartup > _mcpRetryUntil)
+                {
+                    _mcpAutoRetryEnabled = false;
+                }
+                else if (!_mcpBridgeChecking && !_mcpServerChecking)
+                {
+                    CheckMcpStatusAsync(settings);
+                }
+            }
         }
 
         private static void DrawStatusRow(string label, bool isOnline, bool isChecking, bool statusKnown)
@@ -372,6 +357,80 @@ namespace GPTUnity.Data
             EditorGUILayout.HelpBox(message, messageType);
         }
 
+        private static void DrawSearchStatusSummary()
+        {
+            var message = BuildSearchStatusSummary();
+            var messageType = !_searchStatusKnown || _searchChecking
+                ? MessageType.Info
+                : (_searchAvailable ? MessageType.Info : MessageType.Warning);
+            EditorGUILayout.HelpBox(message, messageType);
+        }
+
+        private static string BuildSearchStatusSummary()
+        {
+            if (_searchChecking)
+                return "Checking search service status...";
+
+            if (!_searchStatusKnown)
+                return "Search service status has not been checked yet.";
+
+            if (_searchAvailable)
+                return "Search is ready. The local semantic search server is online.";
+
+            return "Search is offline. Start the local search service to enable semantic indexing and queries.";
+        }
+
+        private static void DrawSearchControls(ChatSettings settings)
+        {
+            var searchExpectedRunning = IsSearchExpectedRunning();
+            var canStart = !searchExpectedRunning;
+            var canStop = searchExpectedRunning;
+
+            EditorGUILayout.BeginHorizontal();
+
+            using (new EditorGUI.DisabledScope(!canStart))
+            {
+                if (GUILayout.Button(new GUIContent("Start Search", "Start or reconnect the local semantic search server.")))
+                {
+                    StartServerAsync(settings);
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(!canStop))
+            {
+                if (GUILayout.Button(new GUIContent("Stop Search", "Stop the local semantic search server.")))
+                {
+                    StopServerAsync(settings);
+                }
+            }
+
+            if (GUILayout.Button(new GUIContent("Check Status", "Refresh the local search server health check.")))
+            {
+                CheckSearchStatusAsync(settings);
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void DrawSearchIndexControls(ChatSettings settings)
+        {
+            EditorGUILayout.LabelField("Search Index", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Rebuild the extracted project data and refresh the semantic index used by search.", EditorStyles.miniLabel);
+
+            using (new EditorGUI.DisabledScope(_searchRebuildInProgress))
+            {
+                if (GUILayout.Button(new GUIContent("Rebuild Search Index", "Re-extract project data and rebuild the semantic search index.")))
+                {
+                    RebuildSearchIndexAsync(settings);
+                }
+            }
+
+            if (_searchRebuildInProgress)
+            {
+                EditorGUILayout.HelpBox("Rebuilding the search index. Check the Unity Console for extractor and indexer progress.", MessageType.Info);
+            }
+        }
+
         private static string BuildMcpStatusSummary()
         {
             if (_mcpBridgeChecking || _mcpServerChecking)
@@ -394,8 +453,9 @@ namespace GPTUnity.Data
 
         private static void DrawMcpControls(ChatSettings settings)
         {
-            var canStart = !_mcpBridgeAvailable || !_mcpServerAvailable;
-            var canStop = _mcpBridgeAvailable || _mcpServerAvailable || Mcp.McpServerController.IsHubMode;
+            var mcpExpectedRunning = IsMcpExpectedRunning();
+            var canStart = !mcpExpectedRunning;
+            var canStop = mcpExpectedRunning;
 
             EditorGUILayout.BeginHorizontal();
 
@@ -499,6 +559,16 @@ namespace GPTUnity.Data
             _mcpLogsScroll = EditorGUILayout.BeginScrollView(_mcpLogsScroll, GUILayout.Height(180));
             EditorGUILayout.TextArea(Mcp.McpDiagnostics.GetRecentText(), GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
+        }
+
+        private static bool IsSearchExpectedRunning()
+        {
+            return _searchAvailable || _searchAutoRetryEnabled;
+        }
+
+        private static bool IsMcpExpectedRunning()
+        {
+            return _mcpBridgeAvailable || _mcpServerAvailable || _mcpAutoRetryEnabled || Mcp.McpServerController.IsHubMode;
         }
 
         private static string DrawStatusInlineTextField(
@@ -658,11 +728,9 @@ namespace GPTUnity.Data
             }
 
             bool isAvailable = false;
-            
-            var window = EditorWindow.GetWindow<ChatEditorWindow>();
-            if (window != null && window.SearchApiClient != null)
+            var client = GetSearchApiClient(settings);
+            if (client != null)
             {
-                var client = window.SearchApiClient;
                 try
                 {
                     isAvailable = await client.IsServerAvailable();
@@ -677,6 +745,9 @@ namespace GPTUnity.Data
                 {
                     await client.StartSearchServerAsync();
                     Debug.Log("[ChatSettingsProvider] Search server started successfully.");
+                    _searchStatusKnown = false;
+                    _searchAutoRetryEnabled = true;
+                    _searchRetryUntil = EditorApplication.timeSinceStartup + 10.0;
                     return;
                 }
                 
@@ -686,20 +757,60 @@ namespace GPTUnity.Data
         
         private static async void StopServerAsync(ChatSettings settings)
         {
-            var window = EditorWindow.GetWindow<ChatEditorWindow>();
-            if (window != null && window.SearchApiClient != null)
+            var client = GetSearchApiClient(settings);
+            if (client != null)
             {
-                var client = window.SearchApiClient;
                 try
                 {
                     await client.StopSearchServer();
                     Debug.Log("[ChatSettingsProvider] Search server stopped successfully.");
+                    _searchAvailable = false;
+                    _searchChecking = false;
+                    _searchStatusKnown = true;
+                    _searchAutoRetryEnabled = false;
                 }
                 catch (Exception e)
                 {
                     Debug.LogError($"Error stopping Search API server: {e.Message}");
                 }
             }
+        }
+
+        private static async void RebuildSearchIndexAsync(ChatSettings settings)
+        {
+            if (_searchRebuildInProgress)
+                return;
+
+            if (!EnsureSearchEnvironment(settings))
+            {
+                Debug.LogError("[ChatSettingsProvider] Search environment setup failed. Search index rebuild was not started.");
+                return;
+            }
+
+            _searchRebuildInProgress = true;
+            try
+            {
+                await System.Threading.Tasks.Task.Run(() => ExtractorRunner.RunExtractor(settings));
+                ExtractorRunner.RunIndexer(settings);
+                Debug.Log("[ChatSettingsProvider] Search index rebuild started successfully.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[ChatSettingsProvider] Search index rebuild failed: {e.Message}");
+            }
+            finally
+            {
+                _searchRebuildInProgress = false;
+            }
+        }
+
+        private static IIndexingServiceApi GetSearchApiClient(ChatSettings settings)
+        {
+            var existingWindow = Resources.FindObjectsOfTypeAll<ChatEditorWindow>().FirstOrDefault();
+            if (existingWindow != null && existingWindow.SearchApiClient != null)
+                return existingWindow.SearchApiClient;
+
+            return new DeepSearchClient(settings.SearchApiHostResolved, settings.SearchApiPythonPathResolved);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace GPTUnity.Indexing
         
         // Paths relative to unity project root
 
-        private Process _serverProcess;
+        private static Process _serverProcess;
         
         public DeepSearchClient(string host = "http://127.0.0.1:8000", string pythonExe = "Library/py/venv_mcp/bin/python3")
         {
