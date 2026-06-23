@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Linq;
 using DeathByGravity.GPTActions;
 using GPTUnity.Indexing;
 using GPTUnity.Settings;
@@ -29,6 +30,10 @@ namespace GPTUnity.Data
         private static string _lastMcpServerUrl;
         private static bool _mcpAutoRetryEnabled;
         private static double _mcpRetryUntil;
+        private static bool _mcpToolsExpanded = true;
+        private static bool _mcpLogsExpanded;
+        private static Vector2 _mcpToolsScroll;
+        private static Vector2 _mcpLogsScroll;
 
         static ChatSettingsProvider()
         {
@@ -151,6 +156,9 @@ namespace GPTUnity.Data
                     EditorGUILayout.LabelField("MCP Runtime Mode", Mcp.McpServerController.IsHubMode ? "HUB" : "STANDALONE");
                     settings.McpAutoStart = EditorGUILayout.Toggle("MCP Autostart", settings.McpAutoStart);
                     settings.McpUseUpdateQueue = EditorGUILayout.Toggle("MCP Use Update Queue", settings.McpUseUpdateQueue);
+                    settings.McpDebugLogging = EditorGUILayout.Toggle(
+                        new GUIContent("MCP Debug Logging", "Capture verbose MCP bridge/server logs for debugging."),
+                        settings.McpDebugLogging);
 
                     if (_lastMcpBridgeUrl != settings.McpBridgeUrl ||
                         _lastMcpBridgeAutoUrl != settings.McpBridgeAutoUrl ||
@@ -167,42 +175,15 @@ namespace GPTUnity.Data
                         CheckMcpStatusAsync(settings);
                     }
 
+                    DrawMcpStatusSummary();
                     GUILayout.Space(4);
-
-                    if (GUILayout.Button("Start MCP Services"))
-                    {
-                        if (EnsureMcpEnvironment(settings))
-                        {
-                            Mcp.McpServerController.StartAll(settings);
-                            // Trigger status refresh after start
-                            _mcpStatusKnown = false;
-                            _mcpAutoRetryEnabled = true;
-                            _mcpRetryUntil = EditorApplication.timeSinceStartup + 10.0;
-                        }
-                        else
-                        {
-                            Debug.LogError("[ChatSettingsProvider] MCP environment setup failed. MCP server was not started.");
-                        }
-                    }
-
-                    if (GUILayout.Button("Stop MCP Services"))
-                    {
-                        Mcp.McpServerController.StopAll();
-                        // Immediately reflect offline status
-                        _mcpBridgeAvailable = false;
-                        _mcpServerAvailable = false;
-                        _mcpBridgeChecking = false;
-                        _mcpServerChecking = false;
-                        _mcpStatusKnown = true;
-                        _mcpAutoRetryEnabled = false;
-                    }
-
-                    if (GUILayout.Button("Refresh MCP Status"))
-                    {
-                        CheckMcpStatusAsync(settings);
-                    }
+                    DrawMcpControls(settings);
+                    GUILayout.Space(8);
+                    DrawMcpTools(settings);
+                    GUILayout.Space(8);
+                    DrawMcpLogs(settings);
                     EditorGUILayout.EndVertical();
-
+                    
                     if (EditorGUI.EndChangeCheck())
                     {
                         settings.ColorBackgroundUser = newColorBackgroundUser;
@@ -380,6 +361,144 @@ namespace GPTUnity.Data
             EditorGUILayout.LabelField(label, GUILayout.Width(160));
             EditorGUILayout.LabelField(statusText, style);
             EditorGUILayout.EndHorizontal();
+        }
+
+        private static void DrawMcpStatusSummary()
+        {
+            var message = BuildMcpStatusSummary();
+            var messageType = (!_mcpStatusKnown || _mcpBridgeChecking || _mcpServerChecking)
+                ? MessageType.Info
+                : (_mcpBridgeAvailable && _mcpServerAvailable ? MessageType.Info : MessageType.Warning);
+            EditorGUILayout.HelpBox(message, messageType);
+        }
+
+        private static string BuildMcpStatusSummary()
+        {
+            if (_mcpBridgeChecking || _mcpServerChecking)
+                return "Checking MCP service status...";
+
+            if (!_mcpStatusKnown)
+                return "MCP status has not been checked yet.";
+
+            if (_mcpBridgeAvailable && _mcpServerAvailable)
+                return "MCP is ready. The Unity bridge and Python MCP server are both online.";
+
+            if (_mcpBridgeAvailable && !_mcpServerAvailable)
+                return "The Unity bridge is online, but the Python MCP server is offline.";
+
+            if (!_mcpBridgeAvailable && _mcpServerAvailable)
+                return "The Python MCP server is online, but the Unity bridge is offline.";
+
+            return "MCP is offline. Start the services to make the tools discoverable.";
+        }
+
+        private static void DrawMcpControls(ChatSettings settings)
+        {
+            var canStart = !_mcpBridgeAvailable || !_mcpServerAvailable;
+            var canStop = _mcpBridgeAvailable || _mcpServerAvailable || Mcp.McpServerController.IsHubMode;
+
+            EditorGUILayout.BeginHorizontal();
+
+            using (new EditorGUI.DisabledScope(!canStart))
+            {
+                if (GUILayout.Button(new GUIContent("Start MCP", "Start or reconnect the Unity bridge and Python MCP server.")))
+                {
+                    if (EnsureMcpEnvironment(settings))
+                    {
+                        Mcp.McpServerController.StartAll(settings);
+                        _mcpStatusKnown = false;
+                        _mcpAutoRetryEnabled = true;
+                        _mcpRetryUntil = EditorApplication.timeSinceStartup + 10.0;
+                    }
+                    else
+                    {
+                        Debug.LogError("[ChatSettingsProvider] MCP environment setup failed. MCP server was not started.");
+                    }
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(!canStop))
+            {
+                if (GUILayout.Button(new GUIContent("Stop MCP", "Stop the Unity bridge and Python MCP server.")))
+                {
+                    Mcp.McpServerController.StopAll();
+                    _mcpBridgeAvailable = false;
+                    _mcpServerAvailable = false;
+                    _mcpBridgeChecking = false;
+                    _mcpServerChecking = false;
+                    _mcpStatusKnown = true;
+                    _mcpAutoRetryEnabled = false;
+                }
+            }
+
+            if (GUILayout.Button(new GUIContent("Check Status", "Refresh bridge and server health checks.")))
+            {
+                CheckMcpStatusAsync(settings);
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private static void DrawMcpTools(ChatSettings settings)
+        {
+            var allTools = Mcp.McpToolRegistry.GetTools(enabledOnly: false);
+            var enabledCount = allTools.Count(tool => tool.enabled);
+
+            _mcpToolsExpanded = EditorGUILayout.Foldout(
+                _mcpToolsExpanded,
+                $"Discoverable Tools ({enabledCount}/{allTools.Count} enabled)",
+                true);
+
+            if (!_mcpToolsExpanded)
+                return;
+
+            EditorGUILayout.LabelField("Choose which discovered MCP tools are exposed to external MCP clients.", EditorStyles.miniLabel);
+
+            if (allTools.Count == 0)
+            {
+                EditorGUILayout.HelpBox("No discoverable MCP tools were found.", MessageType.Info);
+                return;
+            }
+
+            var maxHeight = Mathf.Min(280f, 24f + (allTools.Count * 22f));
+            _mcpToolsScroll = EditorGUILayout.BeginScrollView(_mcpToolsScroll, GUILayout.Height(maxHeight));
+            foreach (var tool in allTools)
+            {
+                var currentlyEnabled = settings.IsMcpToolEnabled(tool.name);
+                var toggled = EditorGUILayout.ToggleLeft(
+                    new GUIContent(tool.name, string.IsNullOrWhiteSpace(tool.description) ? "No description available." : tool.description),
+                    currentlyEnabled);
+                if (toggled != currentlyEnabled)
+                {
+                    settings.SetMcpToolEnabled(tool.name, toggled);
+                }
+            }
+            EditorGUILayout.EndScrollView();
+        }
+
+        private static void DrawMcpLogs(ChatSettings settings)
+        {
+            _mcpLogsExpanded = EditorGUILayout.Foldout(_mcpLogsExpanded, "MCP Debug Logs", true);
+            if (!_mcpLogsExpanded)
+                return;
+
+            if (!settings.McpDebugLogging)
+            {
+                EditorGUILayout.HelpBox("Turn on MCP Debug Logging to capture bridge and server logs here.", MessageType.Info);
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Clear Logs", GUILayout.Width(100)))
+            {
+                Mcp.McpDiagnostics.Clear();
+            }
+            EditorGUILayout.LabelField("Recent MCP-specific diagnostics captured while logging is enabled.", EditorStyles.miniLabel);
+            EditorGUILayout.EndHorizontal();
+
+            _mcpLogsScroll = EditorGUILayout.BeginScrollView(_mcpLogsScroll, GUILayout.Height(180));
+            EditorGUILayout.TextArea(Mcp.McpDiagnostics.GetRecentText(), GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
         }
 
         private static string DrawStatusInlineTextField(

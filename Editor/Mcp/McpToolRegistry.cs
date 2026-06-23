@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using GPTUnity.Settings;
 using GPTUnity.Actions;
 using UnityEngine;
 
@@ -11,11 +12,15 @@ namespace Mcp
     {
         private static readonly Type BaseActionType = typeof(GPTAssistantAction);
 
-        public static List<McpToolDefinition> GetTools()
+        public static List<McpToolDefinition> GetTools(bool enabledOnly = false)
         {
             var tools = new List<McpToolDefinition>();
+            var settings = ChatSettings.instance;
             foreach (var actionType in CollectActionTypes())
             {
+                if (enabledOnly && settings != null && !settings.IsMcpToolEnabled(actionType.Name))
+                    continue;
+
                 var description = GetTypeDescription(actionType);
                 var parameters = GetFunctionParameters(actionType);
                 var required = GetRequiredParameterNames(actionType);
@@ -31,11 +36,12 @@ namespace Mcp
                 {
                     name = actionType.Name,
                     description = description ?? "Dynamically discovered action class",
-                    inputSchema = inputSchema
+                    inputSchema = inputSchema,
+                    enabled = settings == null || settings.IsMcpToolEnabled(actionType.Name)
                 });
             }
 
-            return tools;
+            return tools.OrderBy(tool => tool.name).ToList();
         }
 
         private static IEnumerable<Type> CollectActionTypes()

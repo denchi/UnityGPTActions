@@ -7,6 +7,7 @@ namespace Mcp
         public string name;
         public string description;
         public object inputSchema;
+        public bool enabled;
     }
 
     public class McpToolCallRequest

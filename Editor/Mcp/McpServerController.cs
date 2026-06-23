@@ -44,6 +44,7 @@ namespace Mcp
             ActiveMcpServerUrl = serverUrl;
 
             Debug.Log($"[MCP] Runtime mode: {(IsHubMode ? "HUB" : "STANDALONE")}. bridge={ActiveBridgeUrl} server={ActiveMcpServerUrl}");
+            McpDiagnostics.Log($"Starting MCP runtime in {(IsHubMode ? "hub" : "standalone")} mode.");
 
             McpBridgeServer.Start(ActiveBridgeUrl);
             StartPythonServer(settings, ActiveBridgeUrl, ActiveMcpServerUrl);
@@ -53,6 +54,7 @@ namespace Mcp
 
         public static void StopAll()
         {
+            McpDiagnostics.Log("Stopping MCP runtime.");
             HubAgentRegistrar.Stop();
             StopPythonServer(ChatSettings.instance);
             McpBridgeServer.Stop();
@@ -138,8 +140,8 @@ namespace Mcp
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
-            startInfo.Environment["MCP_LOG_PAYLOAD"] = "1";
-            startInfo.Environment["MCP_LOG_LEVEL"] = "debug";
+            startInfo.Environment["MCP_LOG_PAYLOAD"] = settings.McpDebugLogging ? "1" : "0";
+            startInfo.Environment["MCP_LOG_LEVEL"] = settings.McpDebugLogging ? "debug" : "info";
 
             _pythonProcess = new Process();
             _pythonProcess.StartInfo = startInfo;
@@ -151,6 +153,7 @@ namespace Mcp
             _pythonProcess.BeginErrorReadLine();
 
             Debug.Log($"[MCP] MCP server starting: {pythonExe} {args}");
+            McpDiagnostics.Log($"Launching Python MCP server at {host}:{port}.");
         }
 
         private static bool TryResolveRuntimeUrls(
@@ -254,6 +257,7 @@ namespace Mcp
 
                 _pythonProcess = null;
                 Debug.Log("[MCP] MCP server stopped.");
+                McpDiagnostics.Log("Python MCP server stopped.");
             }
         }
 
@@ -397,6 +401,7 @@ namespace Mcp
             if (string.IsNullOrEmpty(e.Data))
                 return;
             Debug.Log("[MCP] " + e.Data);
+            McpDiagnostics.Log($"python stdout: {e.Data}");
         }
 
         private static void LogError(object sender, DataReceivedEventArgs e)
@@ -406,9 +411,11 @@ namespace Mcp
             if (e.Data.StartsWith("INFO:", StringComparison.OrdinalIgnoreCase))
             {
                 Debug.Log("[MCP] " + e.Data);
+                McpDiagnostics.Log($"python info: {e.Data}");
                 return;
             }
             Debug.LogError("[MCP] " + e.Data);
+            McpDiagnostics.LogError($"python stderr: {e.Data}");
         }
     }
 }

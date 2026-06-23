@@ -73,9 +73,15 @@ def create_server(unity_url):
     _tool_cache = refresh_tool_cache()
     _resource_cache = rebuild_resource_cache(_tool_cache)
 
+    def sync_caches():
+        global _tool_cache, _resource_cache
+        _tool_cache = refresh_tool_cache()
+        _resource_cache = rebuild_resource_cache(_tool_cache)
+        return _tool_cache
+
     @server.list_tools()
     async def list_tools():
-        tools = _tool_cache
+        tools = sync_caches()
         results = []
         if isinstance(tools, list):
             for tool in tools:
@@ -94,6 +100,7 @@ def create_server(unity_url):
 
     @server.list_resources()
     async def list_resources():
+        sync_caches()
         return _resource_cache
 
     @server.list_resource_templates()
@@ -102,6 +109,7 @@ def create_server(unity_url):
 
     @server.read_resource()
     async def read_resource(uri):
+        sync_caches()
         if not uri.startswith("tool://"):
             return "Resource not found"
         name = uri.replace("tool://", "", 1)

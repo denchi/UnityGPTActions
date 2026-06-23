@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GPTUnity.Settings
 {
@@ -27,6 +29,8 @@ namespace GPTUnity.Settings
         [SerializeField] private string _mcpServerUrl = "http://127.0.0.1:7072/mcp";
         [SerializeField] private bool _mcpAutoStart = true;
         [SerializeField] private bool _mcpUseUpdateQueue = true;
+        [SerializeField] private bool _mcpDebugLogging = false;
+        [SerializeField] private List<string> _mcpDisabledTools = new List<string>();
 
         public Color ColorBackgroundUser
         {
@@ -112,6 +116,12 @@ namespace GPTUnity.Settings
             set { _mcpUseUpdateQueue = value; }
         }
 
+        public bool McpDebugLogging
+        {
+            get => _mcpDebugLogging;
+            set => _mcpDebugLogging = value;
+        }
+
         public string McpEnvPath
         {
             get { return _envPath; }
@@ -122,6 +132,38 @@ namespace GPTUnity.Settings
         {
             get { return _pythonFallback; }
             set { _pythonFallback = value; }
+        }
+
+        public bool IsMcpToolEnabled(string toolName)
+        {
+            if (string.IsNullOrWhiteSpace(toolName))
+                return false;
+
+            return !_mcpDisabledTools.Contains(toolName);
+        }
+
+        public void SetMcpToolEnabled(string toolName, bool enabled)
+        {
+            if (string.IsNullOrWhiteSpace(toolName))
+                return;
+
+            _mcpDisabledTools ??= new List<string>();
+            _mcpDisabledTools.RemoveAll(name => string.Equals(name, toolName, System.StringComparison.Ordinal));
+
+            if (!enabled)
+            {
+                _mcpDisabledTools.Add(toolName);
+                _mcpDisabledTools = _mcpDisabledTools
+                    .Distinct()
+                    .OrderBy(name => name)
+                    .ToList();
+            }
+        }
+
+        public IReadOnlyList<string> GetMcpDisabledTools()
+        {
+            _mcpDisabledTools ??= new List<string>();
+            return _mcpDisabledTools;
         }
 
         public string SearchApiPythonPathResolved => ResolveLibraryPyPath(_pythonPath);

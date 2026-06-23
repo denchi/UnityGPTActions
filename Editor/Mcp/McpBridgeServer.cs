@@ -115,6 +115,8 @@ namespace Mcp
             try
             {
                 var path = context.Request.Url.AbsolutePath.TrimEnd('/');
+                McpDiagnostics.Log($"Bridge request {context.Request.HttpMethod} {path}");
+
                 if (path.EndsWith("/health"))
                 {
                     await WriteJsonAsync(context.Response, new { ok = true });
@@ -123,7 +125,8 @@ namespace Mcp
 
                 if (path.EndsWith("/tools") && context.Request.HttpMethod == "GET")
                 {
-                    var tools = McpToolRegistry.GetTools();
+                    var tools = McpToolRegistry.GetTools(enabledOnly: true);
+                    McpDiagnostics.Log($"Returning {tools.Count} enabled tool(s).");
                     await WriteJsonAsync(context.Response, tools);
                     return;
                 }
@@ -144,6 +147,20 @@ namespace Mcp
                         return;
                     }
 
+                    if (!ChatSettings.instance.IsMcpToolEnabled(request.name))
+                    {
+                        context.Response.StatusCode = 403;
+                        var disabledResponse = new McpToolCallResponse
+                        {
+                            ok = false,
+                            content = $"Tool '{request.name}' is disabled in MCP settings.",
+                            isError = true
+                        };
+                        McpDiagnostics.Log($"Blocked disabled tool call: {request.name}");
+                        await WriteJsonAsync(context.Response, disabledResponse);
+                        return;
+                    }
+
                     var response = await ExecuteToolAsync(request);
                     await WriteJsonAsync(context.Response, response);
                     return;
@@ -155,6 +172,7 @@ namespace Mcp
             catch (Exception e)
             {
                 context.Response.StatusCode = 500;
+                McpDiagnostics.LogError($"Bridge exception: {e.Message}");
                 await WriteJsonAsync(context.Response, new { ok = false, message = e.Message });
             }
             finally
@@ -167,6 +185,7 @@ namespace Mcp
         {
             try
             {
+                McpDiagnostics.Log($"Executing tool: {request.name}");
                 return await EditorMainThread.RunAsync(async () =>
                 {
                     var args = ToStringDictionary(request.arguments);
@@ -209,6 +228,7 @@ namespace Mcp
                     }
 
                     var result = await action.Execute();
+                    McpDiagnostics.Log($"Tool completed: {request.name}");
                     return new McpToolCallResponse
                     {
                         ok = true,
@@ -219,6 +239,7 @@ namespace Mcp
             }
             catch (Exception e)
             {
+                McpDiagnostics.LogError($"Tool failed: {request.name}. {e.Message}");
                 return new McpToolCallResponse
                 {
                     ok = false,
