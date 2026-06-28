@@ -5,10 +5,10 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates a new tag.")]
+    [GPTAction("Creates a new Unity tag in the project's TagManager settings.", Name = "create_tag")]
     public class CreateTagAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the new tag")] 
+        [GPTParameter("Name of the new tag to create.", true, Name = "tag_name")] 
         public string TagName { get; set; }
 
 

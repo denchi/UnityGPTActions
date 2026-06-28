@@ -7,13 +7,13 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates a new prefab from a selected GameObject.")]
+    [GPTAction("Creates a prefab asset from an existing scene GameObject.", Name = "create_prefab")]
     public class CreatePrefabAction : GPTAssistantAction
     {
-        [GPTParameter("Prefab asset path")] 
+        [GPTParameter("Prefab asset path to create, for example 'Assets/Prefabs/MyPrefab.prefab'.", true, Name = "prefab_asset_path")] 
         public string PrefabAssetPath { get; set; }
 
-        [GPTParameter("GameObject name to make a prefab from")]
+        [GPTParameter("Scene GameObject name or hierarchy path to turn into a prefab.", true, Name = "game_object_name_or_path")]
         public string GameObjectName { get; set; }
 
         public override async Task<string> Execute()

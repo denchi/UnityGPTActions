@@ -6,13 +6,13 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Renames a GameObject in the scene.")]
+    [GPTAction("Renames an existing GameObject in the open scene.", Name = "rename_game_object")]
     public class RenameGameObjectAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the GameObject")]
+        [GPTParameter("Current GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("New GameObject name")]
+        [GPTParameter("New GameObject name.", true, Name = "new_name")]
         public string NewName { get; set; }
 
         public override async Task<string> Execute()
@@ -33,4 +33,3 @@ namespace GPTUnity.Actions
         }
     }
 }
-

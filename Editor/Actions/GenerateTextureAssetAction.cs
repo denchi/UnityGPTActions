@@ -9,28 +9,28 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction(@"Generates a texture or sprite asset file using a prompt.")]
+    [GPTAction(@"Generates a texture or sprite asset file from a text prompt using the configured image API.", Name = "generate_texture_asset")]
     public class GenerateTextureAssetAction : GPTAssistantAction, IGPTActionThatRequiresReload, IGPTActionThatRequiresImagesApi, IGPTActionThatContainsCode
     {
-        [GPTParameter("Output file name without extension")]
+        [GPTParameter("Output file name without extension.", true, Name = "file_name")]
         public string FileName { get; set; }
 
-        [GPTParameter("Best location matching this file. Ex: Assets/Textures/")]
+        [GPTParameter("Project-relative output folder for the generated image asset.", Name = "output_directory")]
         public string PathToDirectory { get; set; } = "Assets/Textures/";
 
-        [GPTParameter("Prompt for the game asset image generation")]
+        [GPTParameter("Prompt describing the texture or sprite to generate.", true, Name = "prompt")]
         public string Prompt { get; set; }
 
-        [GPTParameter("Should the image background be transparent?")]
+        [GPTParameter("Whether the generated image should use a transparent background.", Name = "transparent")]
         public bool Transparent { get; set; } = false;
 
-        [GPTParameter("Width of the image")]
+        [GPTParameter("Requested output width in pixels.", Name = "width")]
         public int Width { get; set; } = 1024;
 
-        [GPTParameter("Height of the image")]
+        [GPTParameter("Requested output height in pixels.", Name = "height")]
         public int Height { get; set; } = 1024;
         
-        [GPTParameter("Save as sprite (for SpriteRenderer and UI.Image)")]
+        [GPTParameter("Import the generated asset as a Sprite for SpriteRenderer or UI Image usage.", Name = "save_as_sprite")]
         public bool SaveAsSprite { get; set; }
         
         public string Content => $"{Prompt} --width {Width} --height {Height} --transparent {Transparent}";

@@ -6,16 +6,16 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates an Animator Controller and assigns it to a GameObject.")]
+    [GPTAction("Creates an Animator Controller asset and assigns it to a GameObject Animator component.", Name = "create_animator_controller")]
     public class CreateAnimatorControllerAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the Animator Controller")]
+        [GPTParameter("Animator Controller file name without extension.", true, Name = "animator_name")]
         public string AnimatorName { get; set; }
 
-        [GPTParameter("Name of the GameObject to attach Animator to")]
+        [GPTParameter("GameObject name or hierarchy path to attach the Animator component to.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("Comma-separated list of states to create in the controller (optional)")]
+        [GPTParameter("Optional comma-separated list of state names to create in the controller.", Name = "states")]
         public string States { get; set; }
 
         public override async Task<string> Execute()

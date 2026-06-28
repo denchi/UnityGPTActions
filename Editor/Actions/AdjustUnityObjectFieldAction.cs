@@ -8,19 +8,19 @@ using UnityEditor;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Adjusts a serialized field or property on any UnityEngine.Object asset.")]
+    [GPTAction("Sets a supported field or property on a Unity asset object. Use this for asset-level edits when a more specific action does not exist.", Name = "set_asset_field")]
     public class AdjustUnityObjectFieldAction : GPTAssistantAction
     {
-        [GPTParameter("The asset path (e.g., 'Assets/MyAsset.asset'")]
+        [GPTParameter("Asset identifier. Prefer an asset path like 'Assets/MyAsset.asset'.", true, Name = "object_identifier")]
         public string ObjectIdentifier { get; set; }
 
-        [GPTParameter("The type name of the object (e.g., 'UnityEngine.Material')")]
+        [GPTParameter("Expected Unity object type, such as 'UnityEngine.Material'.", Name = "object_type_name")]
         public string ObjectTypeName { get; set; }
 
-        [GPTParameter("Field/property name")]
+        [GPTParameter("Writable field or property name on the asset.", true, Name = "field_name")]
         public string FieldName { get; set; }
 
-        [GPTParameter("New value as string")]
+        [GPTParameter("New value to assign. Supports strings, numbers, booleans, enums, Vector2, Vector3, Color, and asset references.", true, Name = "value")]
         public string Value { get; set; }
 
         public override async Task<string> Execute()
@@ -29,17 +29,18 @@ namespace GPTUnity.Actions
             if (string.IsNullOrWhiteSpace(ObjectIdentifier))
                 throw new Exception("ObjectIdentifier cannot be empty.");
             
-            if (string.IsNullOrWhiteSpace(ObjectTypeName))
-                throw new Exception("ObjectTypeName cannot be empty.");
-            
             if (string.IsNullOrWhiteSpace(FieldName))
                 throw new Exception("FieldName cannot be empty.");
 
-            if (!UnityAiHelpers.TryGetObjectTypeByType(ObjectTypeName, out var type))
-                throw new Exception($"Type '{ObjectTypeName}' not found.");
-            
-            if (type == null || !typeof(UnityEngine.Object).IsAssignableFrom(type))
-                throw new Exception($"Type '{ObjectTypeName}' not found or is not a UnityEngine.Object.");
+            Type type = typeof(UnityEngine.Object);
+            if (!string.IsNullOrWhiteSpace(ObjectTypeName))
+            {
+                if (!UnityAiHelpers.TryGetObjectTypeByType(ObjectTypeName, out type))
+                    throw new Exception($"Type '{ObjectTypeName}' not found.");
+
+                if (type == null || !typeof(UnityEngine.Object).IsAssignableFrom(type))
+                    throw new Exception($"Type '{ObjectTypeName}' not found or is not a UnityEngine.Object.");
+            }
 
             UnityEngine.Object target = null;
 
@@ -69,7 +70,8 @@ namespace GPTUnity.Actions
 
             EditorUtility.SetDirty(target);
 
-            return $"Set field '{FieldName}' to '{Value}' on '{ObjectIdentifier}'";
+            AssetDatabase.SaveAssets();
+            return $"Set field '{FieldName}' to '{Value}' on '{ObjectIdentifier}'.";
 #else
             throw new Exception("This action can only be executed in the Unity Editor.");
 #endif

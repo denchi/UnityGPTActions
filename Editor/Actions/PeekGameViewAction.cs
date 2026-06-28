@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Captures a Game view screenshot to the project's Temp folder.")]
+    [GPTAction("Captures a screenshot of the Unity Game view into the project's Temp folder for visual inspection.", Name = "capture_game_view")]
     public class PeekGameViewAction : GPTAssistantAction
     {
         public override async Task<string> Execute()

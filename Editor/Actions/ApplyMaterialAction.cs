@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Applies an existing material to a GameObject.")]
+    [GPTAction("Assigns an existing material asset to a GameObject renderer.", Name = "apply_material")]
     public class ApplyMaterialAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the GameObject")]
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("Path to the material asset. Ex: Assets/Materials/NewMaterial.mat")]
+        [GPTParameter("Material asset path, for example 'Assets/Materials/NewMaterial.mat'.", true, Name = "material_asset_path")]
         public string MaterialAssetPath { get; set; }
 
         public override async Task<string> Execute()

@@ -7,16 +7,16 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Queries Unity assets by path, type, and/or name, providing detailed information about matching assets.")]
+    [GPTAction("Finds project assets by folder, Unity type, and/or name. Use this for local asset discovery inside the current Unity project.", Name = "find_assets")]
     public class QueryAssetsAction : GPTAssistantAction, IGPTActionThatContainsCode
     {
-        [GPTParameter("The path to search for assets (optional)")]
+        [GPTParameter("Folder to search under, such as 'Assets', 'Assets/Art', or 'Assets/Prefabs'. Defaults to 'Assets'.")]
         public string Path { get; set; }
 
-        [GPTParameter("The type of assets to search for (e.g., 'Material', 'Texture2D', 'Prefab') (optional)")]
+        [GPTParameter("Optional Unity asset type filter such as 'Material', 'Texture2D', 'Prefab', or 'ScriptableObject'.")]
         public string AssetType { get; set; }
 
-        [GPTParameter("The name of the asset to search for (optional)")]
+        [GPTParameter("Optional asset name or partial name to match.")]
         public string AssetName { get; set; }
 
         public string Content => GetFilter();

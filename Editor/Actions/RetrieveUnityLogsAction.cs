@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Retrieves the last N Unity console logs, optionally filtered by type.")]
+    [GPTAction("Gets recent Unity Console log entries, optionally filtered by log type. Use this for debugging editor or play mode issues.", Name = "get_console_logs")]
     public class RetrieveUnityLogsAction : GPTAssistantAction
     {
         [GPTParameter("Number of log entries to return (default 50).")]

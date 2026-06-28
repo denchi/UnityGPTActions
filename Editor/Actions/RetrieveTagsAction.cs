@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Retrieves all tags.")]
+    [GPTAction("Lists all Unity tags currently defined in the project.", Name = "list_tags")]
     public class RetrieveTagsAction : GPTAssistantAction
     {
         private string[] _tags = new string[0];

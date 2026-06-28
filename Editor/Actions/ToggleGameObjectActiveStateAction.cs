@@ -4,12 +4,12 @@ using GPTUnity.Helpers;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Toggles a GameObject's active state on/off.")]
+    [GPTAction("Sets whether a GameObject is active in the scene hierarchy.", Name = "set_game_object_active")]
     public class ToggleGameObjectActiveStateAction : GPTAssistantAction
     {
-        [GPTParameter("GameObject name")] public string ObjectName { get; set; }
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")] public string ObjectName { get; set; }
 
-        [GPTParameter("true to activate, false to deactivate")]
+        [GPTParameter("True to activate the GameObject, false to deactivate it.", true, Name = "is_active")]
         public bool ActiveState { get; set; }
 
         public override async Task<string> Execute()

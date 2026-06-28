@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Applies multiple serialized-property edits atomically. Rolls back all edits if one fails.")]
+    [GPTAction("Applies multiple serialized-property edits atomically and rolls back all edits if any operation fails.", Name = "apply_batch_edits")]
     public class BatchTransactionAction : GPTAssistantAction
     {
         [Serializable]
@@ -29,10 +29,10 @@ namespace GPTUnity.Actions
             public string value;
         }
 
-        [GPTParameter("JSON payload: {\"operations\":[{\"objectName\":\"Player\",\"componentTypeName\":\"MyComp\",\"propertyPath\":\"_speed\",\"value\":\"10\"}]}")]
+        [GPTParameter("JSON payload describing operations to apply, for example {\"operations\":[{\"objectName\":\"Player\",\"componentTypeName\":\"MyComp\",\"propertyPath\":\"_speed\",\"value\":\"10\"}]}.", true, Name = "operations_json")]
         public string OperationsJson { get; set; }
 
-        [GPTParameter("Record prefab overrides for scene component edits")]
+        [GPTParameter("Record prefab overrides for scene component edits.", Name = "record_prefab_overrides")]
         public bool RecordPrefabOverrides { get; set; } = true;
 
         public override async Task<string> Execute()

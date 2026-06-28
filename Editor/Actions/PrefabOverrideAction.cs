@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Checks, sets, or clears prefab instance overrides for a serialized property path.")]
+    [GPTAction("Checks, sets, or clears prefab instance overrides for a serialized property path. Use this for advanced prefab override management.", Name = "manage_prefab_override")]
     public class PrefabOverrideAction : GPTAssistantAction
     {
         public enum OverrideOperation
@@ -16,19 +16,19 @@ namespace GPTUnity.Actions
             Clear
         }
 
-        [GPTParameter("GameObject name or hierarchy path")]
-        public string ObjectName { get; set; }
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
+        public string ObjectNameOrPath { get; set; }
 
-        [GPTParameter("Component type name")]
+        [GPTParameter("Component type name.", true, Name = "component_type_name")]
         public string ComponentTypeName { get; set; }
 
-        [GPTParameter("SerializedProperty path, e.g. '_assets.Array.data[0]'")]
+        [GPTParameter("SerializedProperty path to inspect or override.", true, Name = "property_path")]
         public string PropertyPath { get; set; }
 
-        [GPTParameter("Operation: Check, Set, Clear")]
+        [GPTParameter("Override operation to perform: Check, Set, or Clear.", true, Name = "operation")]
         public OverrideOperation Operation { get; set; } = OverrideOperation.Check;
 
-        [GPTParameter("Value for Set operation")]
+        [GPTParameter("Value to assign when Operation is Set.", Name = "value")]
         public string Value { get; set; }
 
         public override async Task<string> Execute()
@@ -36,7 +36,7 @@ namespace GPTUnity.Actions
             var component = ResolveComponent();
 
             if (!PrefabUtility.IsPartOfPrefabInstance(component))
-                throw new Exception($"GameObject '{ObjectName}' is not part of a prefab instance.");
+                throw new Exception($"GameObject '{ObjectNameOrPath}' is not part of a prefab instance.");
 
             var serializedObject = new SerializedObject(component);
             var property = ActionEditingUtilities.FindPropertyWithAliases(serializedObject, PropertyPath);
@@ -54,6 +54,8 @@ namespace GPTUnity.Actions
                         : $"No override for '{property.propertyPath}'.";
 
                 case OverrideOperation.Set:
+                    if (Value == null)
+                        throw new Exception("Value is required for the Set operation.");
                     ActionEditingUtilities.SetSerializedPropertyValue(property, Value);
                     serializedObject.ApplyModifiedPropertiesWithoutUndo();
                     PrefabUtility.RecordPrefabInstancePropertyModifications(component);
@@ -73,12 +75,12 @@ namespace GPTUnity.Actions
             if (!UnityAiHelpers.TryGetComponentTypeByType(ComponentTypeName, out var type))
                 throw new Exception($"Component type '{ComponentTypeName}' not found.");
 
-            if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var gameObject))
-                throw new Exception($"GameObject '{ObjectName}' not found.");
+            if (!UnityAiHelpers.TryFindGameObject(ObjectNameOrPath, out var gameObject))
+                throw new Exception($"GameObject '{ObjectNameOrPath}' not found.");
 
             var component = gameObject.GetComponent(type);
             if (!component)
-                throw new Exception($"GameObject '{ObjectName}' does not have component '{ComponentTypeName}'.");
+                throw new Exception($"GameObject '{ObjectNameOrPath}' does not have component '{ComponentTypeName}'.");
 
             return component;
         }

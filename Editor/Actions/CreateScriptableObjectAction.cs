@@ -9,13 +9,13 @@ using UnityEditor;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates a new ScriptableObject asset of the specified type and saves it at the given path.")]
+    [GPTAction("Creates a ScriptableObject asset by type and saves it into the project.", Name = "create_scriptable_object_asset")]
     public class CreateScriptableObjectAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
-        [GPTParameter("The full type name of the ScriptableObject to create (e.g., 'MyNamespace.MySOType')")]
+        [GPTParameter("Full type name of the ScriptableObject to create, for example 'MyNamespace.MySOType'.", true, Name = "scriptable_object_type")]
         public string ScriptableObjectType { get; set; }
 
-        [GPTParameter("The asset path to save the ScriptableObject (e.g., 'Assets/MySO.asset')")]
+        [GPTParameter("Asset path where the ScriptableObject should be created, for example 'Assets/Data/MySO.asset'.", true, Name = "asset_path")]
         public string AssetPath { get; set; }
 
         public override async Task<string> Execute()

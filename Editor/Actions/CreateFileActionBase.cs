@@ -7,16 +7,18 @@ namespace GPTUnity.Actions
 {
     public abstract class CreateFileActionBase : GPTAssistantAction, IGPTActionWithFiles, IGPTActionThatRequiresReload
     {
-        [GPTParameter("Output file name without extension")]
+        [GPTParameter("Name of the file to create, without extension.", true, Name = "file_name")]
         public string FileName { get; set; }
 
-        [GPTParameter("Output file extension. Ex: .cs")]
+        [GPTParameter("Optional file extension override, including or excluding the leading dot. Example: .cs", Name = "file_extension")]
         public string FileExtension { get; set; }
 
-        [GPTParameter("Best location matching this file. Ex: Assets/")]
-        public string PathToDirectory { get; set; } = "NewFile";
+        [GPTParameter("Project-relative output folder. Defaults to the tool-specific folder when omitted.", Name = "output_directory")]
+        public string PathToDirectory { get; set; }
 
         public virtual string Content { get; protected set; }
+        protected virtual string DefaultFileExtension => string.Empty;
+        protected virtual string DefaultDirectory => "Assets/";
 
         public void CreateFile(string overridePath = null)
         {
@@ -26,9 +28,13 @@ namespace GPTUnity.Actions
 
         public override async Task<string> Execute()
         {
-            CreateFile();
+            if (string.IsNullOrWhiteSpace(FileName))
+                throw new System.Exception("FileName is required.");
+
+            var outputPath = GetOutputPath();
+            CreateFile(outputPath);
             
-            return $"File {FileName}{FileExtension} created at {PathToDirectory}";
+            return $"Created file at {outputPath}.";
         }
 
         //
@@ -59,10 +65,14 @@ namespace GPTUnity.Actions
 
         protected string GetOutputPath()
         {
-            var finalPathToDirectory = PathToDirectory;
+            var finalPathToDirectory = string.IsNullOrWhiteSpace(PathToDirectory)
+                ? DefaultDirectory
+                : PathToDirectory;
             if (!finalPathToDirectory.EndsWith("/"))
                 finalPathToDirectory += "/";
-            var finalExtension = FileExtension;
+            var finalExtension = string.IsNullOrWhiteSpace(FileExtension)
+                ? DefaultFileExtension
+                : FileExtension;
             if (!string.IsNullOrWhiteSpace(finalExtension) && !finalExtension.StartsWith("."))
                 finalExtension = "." + finalExtension;
             return finalPathToDirectory + FileName + finalExtension;

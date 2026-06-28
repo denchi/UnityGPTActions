@@ -8,10 +8,10 @@ using UnityEditor; // Added for AssetDatabase
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Searches for C# classes that inherit from a specified base class or implement a specified interface.")]
+    [GPTAction("Finds C# classes in the project that inherit from a given base class or implement a given interface.", Name = "find_scripts_by_base_type")]
     public class QueryCSharpClassesByParentTypeAction : GPTAssistantAction
     {
-        [GPTParameter("The name of the parent class or interface to search for (e.g., 'MonoBehaviour', 'IMyInterface')")]
+        [GPTParameter("Base class or interface name to search for, such as 'MonoBehaviour' or 'IMyInterface'.", true, Name = "parent_type_name")]
         public string ParentTypeName { get; set; }
 
         public override async Task<string> Execute()

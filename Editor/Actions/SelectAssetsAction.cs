@@ -6,10 +6,10 @@ using UnityEditor;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Select all specified project assets in the project view")]
+    [GPTAction("Selects project assets in the Unity Project window by asset path.", Name = "select_assets")]
     public class SelectAssetsAction : GPTAssistantAction
     {
-        [GPTParameter("Paths to the project assets, separated by a ;. Ex: Assets/Textures/MyTexture.png;Assets/Prefabs/MyPrefab.prefab")] 
+        [GPTParameter("Semicolon-separated asset paths to select, for example 'Assets/Textures/A.png;Assets/Prefabs/B.prefab'.", true, Name = "asset_paths")] 
         public string AssetPathsString { get; set; }
         
         private List<string> AssetPaths => AssetPathsString

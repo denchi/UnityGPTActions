@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Describes the contents of a C# script file.")]
+    [GPTAction("Reads a C# script file and summarizes its namespace, classes, and method names.", Name = "describe_csharp_script")]
     public class DescribeCSharpScriptAction : GPTAssistantAction
     {
-        [GPTParameter("Path to the C# script file")]
+        [GPTParameter("Path to the C# script file to inspect.", true, Name = "script_path")]
         public string Input { get; set; }
 
         // public override string Description => _description;

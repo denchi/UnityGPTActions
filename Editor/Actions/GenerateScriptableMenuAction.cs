@@ -1,6 +1,6 @@
 namespace GPTUnity.Actions
 {
-    [GPTAction("Generates a scriptable menu or custom Editor window with specified actions.")]
+    [GPTAction("Generates a scriptable menu or custom Editor window with specified actions.", Expose = false)]
     public class GenerateScriptableMenuAction : CreateFileActionBase
     {
         [GPTParameter("Menu name/title")] public string MenuName { get; set; }

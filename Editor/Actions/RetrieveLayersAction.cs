@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Retrieves all layers.")]
+    [GPTAction("Lists all Unity layers currently defined in the project.", Name = "list_layers")]
     public class RetrieveLayersAction : GPTAssistantAction
     {
         public override async Task<string> Execute()

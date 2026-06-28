@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Get the currently selected GameObject(s) from the hierarchy view")]
+    [GPTAction("Gets the currently selected scene GameObjects from the Unity Hierarchy.", Name = "get_selected_game_objects")]
     public class GetSelectedHierarchyGameObjectAction : GPTAssistantAction
     {
         public override Task<string> Execute()
@@ -26,4 +26,3 @@ namespace GPTUnity.Actions
         }
     }
 }
-

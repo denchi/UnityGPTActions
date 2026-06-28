@@ -5,19 +5,19 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Moves, rotates, or scales an existing GameObject.")]
+    [GPTAction("Sets world position, world rotation, and/or local scale on an existing GameObject.", Name = "set_game_object_transform")]
     public class TransformGameObjectAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the GameObject to transform")]
+        [GPTParameter("GameObject name or hierarchy path to transform.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("New position in 'x,y,z' format. Leave empty if no change.")]
+        [GPTParameter("Optional world position in 'x,y,z' format. Leave empty to keep the current position.", Name = "position")]
         public string Position { get; set; }
 
-        [GPTParameter("New rotation in 'x,y,z' format. Leave empty if no change.")]
+        [GPTParameter("Optional world rotation Euler angles in 'x,y,z' format. Leave empty to keep the current rotation.", Name = "rotation")]
         public string Rotation { get; set; }
 
-        [GPTParameter("New scale in 'x,y,z' format. Leave empty if no change.")]
+        [GPTParameter("Optional local scale in 'x,y,z' format. Leave empty to keep the current scale.", Name = "scale")]
         public string Scale { get; set; }
 
         public override async Task<string> Execute()

@@ -6,31 +6,31 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Modifies RectTransform properties of a UI element")]
+    [GPTAction("Sets one or more RectTransform layout properties on a UI GameObject.", Name = "set_rect_transform")]
     public class AdjustRectTransformAction : GPTAssistantAction
     {
-        [GPTParameter("GameObject name")]
+        [GPTParameter("UI GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("Anchored Position (x,y) - optional")]
+        [GPTParameter("Optional anchored position in 'x,y' format.", Name = "anchored_position")]
         public string AnchoredPosition { get; set; }
 
-        [GPTParameter("Size Delta (width,height) - optional")]
+        [GPTParameter("Optional size delta in 'width,height' format.", Name = "size_delta")]
         public string SizeDelta { get; set; }
 
-        [GPTParameter("Pivot (x,y) - optional")]
+        [GPTParameter("Optional pivot in 'x,y' format.", Name = "pivot")]
         public string Pivot { get; set; }
 
-        [GPTParameter("Rotation (x,y,z) - optional")]
+        [GPTParameter("Optional local rotation Euler angles in 'x,y,z' format.", Name = "rotation")]
         public string Rotation { get; set; }
 
-        [GPTParameter("Scale (x,y,z) - optional")]
+        [GPTParameter("Optional local scale in 'x,y,z' format.", Name = "scale")]
         public string Scale { get; set; }
 
-        [GPTParameter("Anchor Min (x,y) - optional")]
+        [GPTParameter("Optional anchor min in 'x,y' format.", Name = "anchor_min")]
         public string AnchorMin { get; set; }
 
-        [GPTParameter("Anchor Max (x,y) - optional")]
+        [GPTParameter("Optional anchor max in 'x,y' format.", Name = "anchor_max")]
         public string AnchorMax { get; set; }
 
         public override async Task<string> Execute()

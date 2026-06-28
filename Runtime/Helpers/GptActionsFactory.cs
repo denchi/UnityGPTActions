@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using GPTUnity.Actions.Interfaces;
 using GPTUnity.Data;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace GPTUnity.Helpers
@@ -27,13 +27,13 @@ namespace GPTUnity.Helpers
             }
 
             var actionInstance = (IGPTAction)Activator.CreateInstance(actionType);
-            var arguments = new Dictionary<string, string>();
+            var arguments = new JObject();
 
             if (!string.IsNullOrEmpty(functionCall.arguments))
             {
                 try
                 {
-                    arguments = JsonConvert.DeserializeObject<Dictionary<string, string>>(functionCall.arguments);
+                    arguments = JsonConvert.DeserializeObject<JObject>(functionCall.arguments) ?? new JObject();
                 }
                 catch (Exception ex)
                 {

@@ -11,13 +11,13 @@ using UnityEngine.Audio;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates and saves a UnityEngine.Object asset of the specified type at the given path.")]
+    [GPTAction("Creates and saves a Unity asset instance by type at a specified asset path. Use this for generic asset creation when a more specific action does not exist.", Name = "create_unity_asset")]
     public class CreateUnityAssetAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
-        [GPTParameter("The full type name of the UnityEngine.Object to create (e.g., 'UnityEngine.Material')")]
+        [GPTParameter("Full type name of the UnityEngine.Object to create, for example 'UnityEngine.Material'.", true, Name = "object_type")]
         public string ObjectType { get; set; }
 
-        [GPTParameter("The asset path to save the object (e.g., 'Assets/MyAsset.asset')")]
+        [GPTParameter("Asset path where the new object should be saved, for example 'Assets/Data/MyAsset.asset'.", true, Name = "asset_path")]
         public string AssetPath { get; set; }
 
         public override async Task<string> Execute()

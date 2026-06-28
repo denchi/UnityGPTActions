@@ -6,10 +6,10 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates a new GameObject with one or more predefined components.")]
+    [GPTAction("Creates a new GameObject with optional components and transform values.", Name = "create_game_object")]
     public class CreateGameObjectAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the new GameObject")]
+        [GPTParameter("Name of the new GameObject.", true)]
         public string ObjectName { get; set; }
 
         [GPTParameter("Comma-separated list of component types to add (e.g. 'Rigidbody,BoxCollider')")]

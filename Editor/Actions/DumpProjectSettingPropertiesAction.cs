@@ -5,10 +5,10 @@ using UnityEditor;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Dumps all serialized properties from a Project Setting asset.")]
+    [GPTAction("Lists all visible serialized properties from a Unity ProjectSettings asset so they can be inspected before reading or editing.", Name = "list_project_setting_properties")]
     public class DumpProjectSettingPropertiesAction : GPTAssistantAction
     {
-        [GPTParameter("Settings asset path, e.g. 'ProjectSettings/PlayerSettings.asset'")]
+        [GPTParameter("ProjectSettings asset path, for example 'ProjectSettings/PlayerSettings.asset'.", true, Name = "asset_path")]
         public string AssetPath { get; set; }
 
         public override async Task<string> Execute()

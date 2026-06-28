@@ -5,10 +5,10 @@ using GPTUnity.Indexing;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Searches project files (code, docs, assets) using a semantic query.")]
+    [GPTAction("Searches indexed project content such as code, docs, and asset metadata using a semantic query. Use this for broad project discovery when keyword search is not enough.", Name = "search_project_content")]
     public class QueryDeepSearchAction : GPTAssistantAction, IGPTActionThatContainsCode, IGPTActionThatRequiresIndexingApi
     {
-        [GPTParameter("The semantic query to search for within project files (code, docs, assets).")]
+        [GPTParameter("Semantic query to search for across indexed project content.", true, Name = "query")]
         public string Query { get; set; }
 
         public string Content => Query;

@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Retrieves project information such as name, build target, render pipeline, input system, 2D/3D, and loaded scenes.")]
+    [GPTAction("Gets project information such as name, build target, render pipeline, input system, 2D or 3D mode, and loaded scenes.", Name = "get_project_info")]
     public class RetrieveProjectInfoAction : GPTActionBase
     {
         public override async Task<string> Execute()

@@ -8,17 +8,17 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Runs Python code inside Unity using unity-python.")]
+    [GPTAction("Runs Python code as an advanced automation escape hatch. Prefer Unity-native actions first, and use this only when a task truly requires Python-based tooling.", Name = "run_python")]
     [GPTRequiresPackage("com.unity.scripting.python")]
     public class RunPythonCodeAction : GPTAssistantAction, IGPTActionThatContainsCode
     {
-        [GPTParameter("The Python code to execute")]
+        [GPTParameter("Python code to execute.", true)]
         public string Code { get; set; }
         
-        [GPTParameter("The Python Requirements If Any (example: numpy,pillow)")]
+        [GPTParameter("Optional Python packages to install before execution, separated by commas or spaces.")]
         public string Requirements { get; set; }
         
-        [GPTParameter("Does require asset refresh because new assets were added?")]
+        [GPTParameter("Refresh the AssetDatabase after execution if Python created or changed Unity assets.")]
         public bool RequiresAssetsRefresh { get; set; }
         
         public string Content => Code;
@@ -26,6 +26,9 @@ namespace GPTUnity.Actions
         public override async Task<string> Execute()
         {
 #if UNITY_EDITOR
+            if (string.IsNullOrWhiteSpace(Code))
+                throw new Exception("Code is required.");
+
             // Install requirements if specified
             if (!string.IsNullOrWhiteSpace(Requirements))
             {

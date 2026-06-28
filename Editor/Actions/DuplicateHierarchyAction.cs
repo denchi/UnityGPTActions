@@ -7,19 +7,19 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Duplicates a GameObject hierarchy under an optional parent while preserving children/components.")]
+    [GPTAction("Duplicates a GameObject hierarchy, optionally reparents the duplicate, and preserves children and components.", Name = "duplicate_game_object_hierarchy")]
     public class DuplicateHierarchyAction : GPTAssistantAction
     {
-        [GPTParameter("Source GameObject name or hierarchy path")]
+        [GPTParameter("Source GameObject name or hierarchy path to duplicate.", true, Name = "source_object_name_or_path")]
         public string SourceObjectName { get; set; }
 
-        [GPTParameter("Optional parent GameObject name/path for the duplicate")]
+        [GPTParameter("Optional parent GameObject name or hierarchy path for the duplicate.", Name = "parent_object_name_or_path")]
         public string ParentObjectName { get; set; }
 
-        [GPTParameter("Optional new name for the duplicated root")]
+        [GPTParameter("Optional new name for the duplicated root GameObject.", Name = "new_name")]
         public string NewName { get; set; }
 
-        [GPTParameter("Keep world transform when reparenting")]
+        [GPTParameter("Keep world transform when reparenting the duplicate.", Name = "keep_world_transform")]
         public bool KeepWorldTransform { get; set; } = true;
 
         public override async Task<string> Execute()

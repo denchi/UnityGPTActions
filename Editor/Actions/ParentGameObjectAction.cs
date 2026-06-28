@@ -4,13 +4,13 @@ using GPTUnity.Helpers;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Parents one GameObject to another, or unparents if parent is empty.")]
+    [GPTAction("Sets or clears a GameObject parent in the scene hierarchy.", Name = "set_game_object_parent")]
     public class ParentGameObjectAction : GPTAssistantAction
     {
-        [GPTParameter("Child GameObject name")]
+        [GPTParameter("Child GameObject name or hierarchy path.", true, Name = "child_object_name_or_path")]
         public string ChildObject { get; set; }
 
-        [GPTParameter("Parent GameObject name, empty to unparent")]
+        [GPTParameter("Optional parent GameObject name or hierarchy path. Leave empty to unparent.", Name = "parent_object_name_or_path")]
         public string ParentObject { get; set; }
 
         public override async Task<string> Execute()

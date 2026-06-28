@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using System.Reflection;
-
 namespace GPTUnity.Actions
 {
-    [GPTAction]
+    [GPTAction("Creates a custom Unity shader asset from provided shader source code. Use this for advanced shader authoring when a generated material is not enough.", Name = "create_custom_shader")]
     public class CreateCustomShaderAction : CreateFileActionBase
     {
-        [GPTParameter("Custom shader code to use")]
+        [GPTParameter("Full Unity shader source code to write into the .shader asset.", true, Name = "shader_code")]
         public string ShaderCode { get; set; } = @"
             Shader ""Custom/Shader"" {
                 Properties {
@@ -20,5 +17,7 @@ namespace GPTUnity.Actions
             }";
 
         public override string Content => ShaderCode;
+        protected override string DefaultFileExtension => ".shader";
+        protected override string DefaultDirectory => "Assets/Shaders/";
     }
 }

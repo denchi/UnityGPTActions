@@ -7,19 +7,19 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates a prefab variant from a scene prefab instance or a source prefab.")]
+    [GPTAction("Creates a prefab variant from a scene prefab instance or a source prefab asset.", Name = "create_prefab_variant")]
     public class CreatePrefabVariantAction : GPTAssistantAction
     {
-        [GPTParameter("Output variant path (Assets/... .prefab)")]
+        [GPTParameter("Output prefab variant path, for example 'Assets/Prefabs/MyVariant.prefab'.", true, Name = "variant_prefab_path")]
         public string VariantPrefabPath { get; set; }
 
-        [GPTParameter("Optional scene object name/path; must be a prefab instance root for variant behavior")]
+        [GPTParameter("Optional scene object name or hierarchy path. Use a prefab instance root for true variant behavior.", Name = "scene_object_name_or_path")]
         public string SceneObjectName { get; set; }
 
-        [GPTParameter("Optional source prefab path (Assets/... .prefab)")]
+        [GPTParameter("Optional source prefab path under Assets.", Name = "source_prefab_path")]
         public string SourcePrefabPath { get; set; }
 
-        [GPTParameter("Require resulting asset type to be a prefab variant")]
+        [GPTParameter("Require the resulting asset to be a prefab variant rather than a regular prefab.", Name = "require_variant")]
         public bool RequireVariant { get; set; } = true;
 
         public override async Task<string> Execute()

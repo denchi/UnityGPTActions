@@ -5,19 +5,19 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Gets a public field/property value from a component using reflection.")]
+    [GPTAction("Gets a public readable field or property value from a component. Use this for high-level inspection before falling back to serialized-property tools.", Name = "get_component_member")]
     public class GetComponentMemberAction : GPTAssistantAction
     {
-        [GPTParameter("GameObject name or hierarchy path")]
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("Component type name")]
+        [GPTParameter("Component type name.", true, Name = "component_type_name")]
         public string ComponentTypeName { get; set; }
 
-        [GPTParameter("Component member name (public field/property)")]
+        [GPTParameter("Public component field or property name to read.", true, Name = "member_name")]
         public string MemberName { get; set; }
 
-        [GPTParameter("Legacy alias for MemberName")]
+        [GPTParameter("Legacy alias for MemberName", Name = "field_name", Expose = false)]
         public string FieldName { get; set; }
 
         public override async Task<string> Execute()

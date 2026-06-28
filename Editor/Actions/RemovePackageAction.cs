@@ -8,10 +8,10 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Removes a Unity package from manifest.json.")]
+    [GPTAction("Removes a Unity package dependency from the project manifest.", Name = "remove_package")]
     public class RemovePackageAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
-        [GPTParameter("Name of the package to remove, e.g. com.unity.textmeshpro")]
+        [GPTParameter("Package name to remove, for example 'com.unity.textmeshpro'.", true, Name = "package_name")]
         public string PackageName { get; set; }
 
         public override async Task<string> Execute()

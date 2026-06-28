@@ -9,25 +9,25 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction(@"Generates a material asset file.")]
+    [GPTAction(@"Creates a Unity material asset and optionally assigns shader properties.", Name = "create_material_asset")]
     public class GenerateMaterialAssetAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
-        [GPTParameter("Output file name without extension")] 
+        [GPTParameter("Output file name without extension.", true, Name = "file_name")] 
         public string FileName { get; set; }
 
-        [GPTParameter("Best location matching this file. Ex: Assets/")]
-        public string PathToDirectory { get; set; } = "NewFile";
+        [GPTParameter("Project-relative output folder for the material asset.", Name = "output_directory")]
+        public string PathToDirectory { get; set; } = "Assets/Materials/";
         
-        [GPTParameter("Shader name (If assign shader by name)")]
+        [GPTParameter("Optional shader name to use, such as 'Standard'.", Name = "shader_name")]
         public string ShaderName { get; set; }
         
-        [GPTParameter("Shader asset path to create the material with")]
+        [GPTParameter("Optional shader asset path to load and use for the material.", Name = "shader_path")]
         public string ShaderPath { get; set; }
         
         // [GPTParameter("Shader params to set containing a list of (key, value and type(float, range, color, vector, texture, int))", actionName: nameof(ShaderParamsSchema))]
         // public List<SerializedKeyValuePair> ShaderParams { get; set; }
         
-        [GPTParameter("Shader params: Ex: _color:0.1,0.2,1,1:color;_mainTex:Assets/Textures/1.png:texture;_value:0.1:float;_intensity:2:int;_dir:0.1,0.2,1,1:vector;")]
+        [GPTParameter("Optional semicolon-separated shader parameters, for example '_Color:#FFAA00FF:color;_MainTex:Assets/Textures/1.png:texture;_Value:0.1:float;'.", Name = "shader_params")]
         public string ShaderParams { get; set; }
 
         public override async Task<string> Execute()
@@ -51,6 +51,12 @@ namespace GPTUnity.Actions
 
                 shaderAsset = theShader as Shader;
             }
+
+            if (shaderAsset == null)
+                shaderAsset = Shader.Find("Standard");
+
+            if (shaderAsset == null)
+                throw new Exception("Could not resolve a shader for the material.");
 
             // 3. Create a material
             var material = new Material(shaderAsset);
@@ -154,6 +160,8 @@ namespace GPTUnity.Actions
             var finalPathToDirectory = PathToDirectory;
             if (!finalPathToDirectory.EndsWith("/"))
                 finalPathToDirectory += "/";
+            if (!finalPathToDirectory.StartsWith("Assets/"))
+                finalPathToDirectory = "Assets/" + finalPathToDirectory.TrimStart('/');
             return finalPathToDirectory + FileName + ".mat";
         }
     }

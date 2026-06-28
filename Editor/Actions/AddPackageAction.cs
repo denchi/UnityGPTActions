@@ -12,13 +12,13 @@ using UnityEditor.PackageManager.Requests;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Adds a Unity package to manifest.json.")]
+    [GPTAction("Adds a Unity package dependency to the project manifest.", Name = "add_package")]
     public class AddPackageAction : GPTAssistantAction, IGPTActionThatRequiresReload
     {
-        [GPTParameter("Name of the package to add, e.g. com.unity.textmeshpro", required: true)]
+        [GPTParameter("Package name to add, for example 'com.unity.textmeshpro'.", required: true, Name = "package_name")]
         public string PackageName { get; set; }
 
-        [GPTParameter("Version of the package to add, e.g. 3.0.6", required: true)]
+        [GPTParameter("Package version to add, for example '3.0.6'.", required: true, Name = "version")]
         public string Version { get; set; }
 
         public override async Task<string> Execute()
@@ -29,12 +29,9 @@ namespace GPTUnity.Actions
                 throw new Exception("Package name and version cannot be empty.");
             }
 
-            string packageId = $"{PackageName}@{Version}";
-            
-            if (!string.IsNullOrEmpty(Version))
-            {
-                packageId = $"{packageId}@{Version}";
-            }
+            string packageId = string.IsNullOrEmpty(Version)
+                ? PackageName
+                : $"{PackageName}@{Version}";
             
             AddRequest request = Client.Add(packageId);
 

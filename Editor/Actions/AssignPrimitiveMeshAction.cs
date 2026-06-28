@@ -5,15 +5,15 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction(@"Assigns a primitive mesh to a GameObject's MeshFilter using built-in Unity resources")]
+    [GPTAction(@"Assigns a built-in Unity primitive mesh to a GameObject MeshFilter.", Name = "assign_primitive_mesh")]
     public class AssignPrimitiveMeshAction : GPTAssistantAction
     {
         private string description;
 
-        [GPTParameter("The type of the primitive. Possible values: Cube, Sphere, Capsule, Cylinder, Plane, Quad")]
+        [GPTParameter("Primitive mesh type to assign: Cube, Sphere, Capsule, Cylinder, Plane, or Quad.", true, Name = "primitive_type")]
         public PrimitiveType PrimitiveType { get; set; }
 
-        [GPTParameter("Name of the GameObject")]
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
         public override async Task<string> Execute()

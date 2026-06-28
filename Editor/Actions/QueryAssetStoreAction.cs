@@ -16,31 +16,31 @@ namespace GPTUnity.Actions
         SerpApi
     }
 
-    [GPTAction("Finds Unity Asset Store packages by query using Google CSE or SerpAPI.")]
+    [GPTAction("Searches the Unity Asset Store or Unity Marketplace for packages matching a query. Use this for external package discovery, not local project inspection.", Name = "search_asset_store")]
     public class QueryAssetStoreAction : GPTAssistantAction, IGPTActionThatContainsCode
     {
-        [GPTParameter("Search terms for the Unity asset package.", true)]
+        [GPTParameter("Search terms for the Unity asset package.", true, Name = "query")]
         public string Query { get; set; }
 
-        [GPTParameter("Provider to use: Auto, GoogleCse, or SerpApi.")]
+        [GPTParameter("Provider to use: Auto, GoogleCse, or SerpApi.", Name = "provider")]
         public AssetStoreSearchProvider Provider { get; set; } = AssetStoreSearchProvider.Auto;
 
-        [GPTParameter("Maximum number of results to return (1-10).")]
+        [GPTParameter("Maximum number of results to return (1-10).", Name = "max_results")]
         public int MaxResults { get; set; } = 5;
 
-        [GPTParameter("Start index for paged results (1-based).")]
+        [GPTParameter("Start index for paged results (1-based).", Name = "start_index")]
         public int StartIndex { get; set; } = 1;
 
-        [GPTParameter("Include marketplace.unity.com/packages in addition to assetstore.unity.com/packages.")]
+        [GPTParameter("Include marketplace.unity.com/packages in addition to assetstore.unity.com/packages.", Name = "include_marketplace")]
         public bool IncludeMarketplace { get; set; } = true;
 
-        [GPTParameter("Optional Google API key override. If empty, uses GOOGLE_CSE_API_KEY or GOOGLE_API_KEY.")]
+        [GPTParameter("Optional advanced override for Google API key. Leave empty to use configured environment variables.", Name = "google_api_key")]
         public string GoogleApiKey { get; set; }
 
-        [GPTParameter("Optional Google CSE ID override. If empty, uses GOOGLE_CSE_CX or GOOGLE_SEARCH_CX.")]
+        [GPTParameter("Optional advanced override for Google CSE ID. Leave empty to use configured environment variables.", Name = "google_cse_id")]
         public string GoogleCseId { get; set; }
 
-        [GPTParameter("Optional SerpAPI key override. If empty, uses SERP_API_KEY.")]
+        [GPTParameter("Optional advanced override for SerpAPI key. Leave empty to use configured environment variables.", Name = "serp_api_key")]
         public string SerpApiKey { get; set; }
 
         public string Content => Query;

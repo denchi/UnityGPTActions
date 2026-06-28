@@ -3,16 +3,16 @@ using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Modifies a value in a Project Setting asset.")]
+    [GPTAction("Sets a serialized value in a Unity ProjectSettings asset by property path.", Name = "set_project_setting")]
     public class ModifyProjectSettingAction : GPTAssistantAction
     {
-        [GPTParameter("Settings asset name, e.g. 'ProjectSettings/PlayerSettings.asset'")]
+        [GPTParameter("ProjectSettings asset path, for example 'ProjectSettings/PlayerSettings.asset'.", true, Name = "asset_path")]
         public string AssetPath { get; set; }
 
-        [GPTParameter("Serialized property path, e.g. 'productName'")]
+        [GPTParameter("Serialized property path to modify, for example 'productName'.", true, Name = "property_path")]
         public string PropertyPath { get; set; }
 
-        [GPTParameter("New value as string")] public string Value { get; set; }
+        [GPTParameter("New value to assign, serialized as text.", true, Name = "value")] public string Value { get; set; }
 
         public override async Task<string> Execute()
         {

@@ -7,22 +7,22 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Sets a serialized property on a component by SerializedProperty path.")]
+    [GPTAction("Sets a serialized property on a component by SerializedProperty path. Use this for advanced serialized edits when higher-level component actions are insufficient.", Name = "set_serialized_property")]
     public class SetSerializedPropertyByPathAction : GPTAssistantAction
     {
-        [GPTParameter("GameObject name or hierarchy path")]
-        public string ObjectName { get; set; }
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
+        public string ObjectNameOrPath { get; set; }
 
-        [GPTParameter("Component type name")]
+        [GPTParameter("Component type name.", true, Name = "component_type_name")]
         public string ComponentTypeName { get; set; }
 
-        [GPTParameter("SerializedProperty path, e.g. '_assets.Array.data[0]' or '_assets[0]'")]
+        [GPTParameter("SerializedProperty path, for example '_assets.Array.data[0]' or '_assets[0]'.", true, Name = "property_path")]
         public string PropertyPath { get; set; }
 
-        [GPTParameter("New value as string")]
+        [GPTParameter("New value to assign to the serialized property.", true, Name = "value")]
         public string Value { get; set; }
 
-        [GPTParameter("Record prefab override when target is a prefab instance")]
+        [GPTParameter("Record a prefab override when the target component belongs to a prefab instance.", Name = "record_prefab_override")]
         public bool RecordPrefabOverride { get; set; } = true;
 
         public override async Task<string> Execute()
@@ -51,7 +51,7 @@ namespace GPTUnity.Actions
                 EditorSceneManager.MarkSceneDirty(component.gameObject.scene);
             }
 
-            return $"Set serialized property '{property.propertyPath}' on '{ObjectName}' ({ComponentTypeName}) to '{Value}'.";
+            return $"Set serialized property '{property.propertyPath}' on '{ObjectNameOrPath}' ({ComponentTypeName}) to '{Value}'.";
         }
 
         private Component ResolveComponent()
@@ -59,12 +59,12 @@ namespace GPTUnity.Actions
             if (!UnityAiHelpers.TryGetComponentTypeByType(ComponentTypeName, out var type))
                 throw new Exception($"Component type '{ComponentTypeName}' not found.");
 
-            if (!UnityAiHelpers.TryFindGameObject(ObjectName, out var gameObject))
-                throw new Exception($"GameObject '{ObjectName}' not found.");
+            if (!UnityAiHelpers.TryFindGameObject(ObjectNameOrPath, out var gameObject))
+                throw new Exception($"GameObject '{ObjectNameOrPath}' not found.");
 
             var component = gameObject.GetComponent(type);
             if (!component)
-                throw new Exception($"GameObject '{ObjectName}' does not have component '{ComponentTypeName}'.");
+                throw new Exception($"GameObject '{ObjectNameOrPath}' does not have component '{ComponentTypeName}'.");
 
             return component;
         }

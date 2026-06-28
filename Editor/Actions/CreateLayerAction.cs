@@ -5,10 +5,10 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates a new layer.")]
+    [GPTAction("Creates a new Unity layer in the project's TagManager settings.", Name = "create_layer")]
     public class CreateLayerAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the new layer")]
+        [GPTParameter("Name of the new layer to create.", true, Name = "layer_name")]
         public string LayerName { get; set; }
 
         public override async Task<string> Execute()

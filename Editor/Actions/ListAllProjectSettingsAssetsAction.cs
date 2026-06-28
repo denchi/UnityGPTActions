@@ -6,7 +6,7 @@ using UnityEditor;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Lists all settings assets found in the ProjectSettings folder.")]
+    [GPTAction("Lists all ProjectSettings asset files available for inspection or editing.", Name = "list_project_settings_assets")]
     public class ListAllProjectSettingsAssetsAction : GPTAssistantAction
     {
         public override async Task<string> Execute()

@@ -7,10 +7,10 @@ using Object = UnityEngine.Object;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Spawns a new (or existing) prefab at a specified position.")]
+    [GPTAction("Spawns a prefab into the current scene with optional parent and transform values.", Name = "spawn_prefab")]
     public class SpawnGameObjectAction : GPTAssistantAction
     {
-        [GPTParameter("Prefab asset path")] 
+        [GPTParameter("Prefab asset path.", true)] 
         public string PrefabAssetPath { get; set; }
 
         [GPTParameter("Parent GameObject name. Can be a path like Canvas/Panel/Button")]

@@ -8,16 +8,16 @@ using Object = UnityEngine.Object;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Resolves a scene object or asset path into stable reference identifiers.")]
+    [GPTAction("Resolves a scene object, asset path, or GUID into stable Unity reference identifiers.", Name = "resolve_object_reference")]
     public class ResolveObjectReferenceAction : GPTAssistantAction
     {
-        [GPTParameter("Scene object path/name, asset path (Assets/...), or asset GUID")]
+        [GPTParameter("Scene object path or name, asset path under Assets, or asset GUID.", true, Name = "object_identifier")]
         public string ObjectIdentifier { get; set; }
 
-        [GPTParameter("Expected object type name, e.g. 'GameObject', 'Material', 'MyComponent'")]
+        [GPTParameter("Optional expected object type such as 'GameObject', 'Material', or 'MyComponent'.", Name = "object_type_name")]
         public string ObjectTypeName { get; set; }
 
-        [GPTParameter("Optional component type name when resolving a component on a scene object")]
+        [GPTParameter("Optional component type name when resolving a component attached to a scene object.", Name = "component_type_name")]
         public string ComponentTypeName { get; set; }
 
         public override async Task<string> Execute()

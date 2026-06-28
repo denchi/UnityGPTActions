@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Captures a Scene view screenshot to the project's Temp folder.")]
+    [GPTAction("Captures a screenshot of the current Unity Scene view into the project's Temp folder for visual inspection.", Name = "capture_scene_view")]
     public class PeekSceneViewAction : GPTAssistantAction
     {
         public override async Task<string> Execute()

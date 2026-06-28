@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Assigns a layer to a GameObject.")]
+    [GPTAction("Assigns an existing Unity layer to a GameObject.", Name = "set_game_object_layer")]
     public class AssignLayerAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the GameObject")]
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
-        [GPTParameter("Name of the layer to assign")]
+        [GPTParameter("Existing layer name to assign.", true, Name = "layer_name")]
         public string LayerName { get; set; }
 
         public override async Task<string> Execute()

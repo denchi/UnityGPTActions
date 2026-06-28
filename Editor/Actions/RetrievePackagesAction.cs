@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Retrieves all installed Unity packages")]
+    [GPTAction("Lists installed Unity packages in the current project.", Name = "list_packages")]
     public class RetrieveInstalledPackagesAction : GPTAssistantAction
     {
         private string _result = "";

@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace GPTUnity.Actions.Interfaces
 {
@@ -7,7 +7,7 @@ namespace GPTUnity.Actions.Interfaces
     {
         string Result { get; set; }
 
-        void InitializeParameters(Dictionary<string, string> arguments);
+        void InitializeParameters(JObject arguments);
 
         Task<string> Execute();
     }

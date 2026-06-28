@@ -56,11 +56,13 @@ namespace GPTUnity.Helpers
                 
                     var actionTypes = assignableTypes
                         .Where(t =>
-                            !t.IsAbstract && CustomAttributeExtensions.GetCustomAttribute<GPTActionAttribute>((MemberInfo)t) != null);
+                            !t.IsAbstract && CustomAttributeExtensions.GetCustomAttribute<GPTActionAttribute>((MemberInfo)t) is { Expose: true });
                     
                     foreach (var actionType in actionTypes)
                     {
-                        actionsDict[actionType.Name] = actionType;
+                        var attribute = actionType.GetCustomAttribute<GPTActionAttribute>();
+                        var actionName = string.IsNullOrWhiteSpace(attribute?.Name) ? actionType.Name : attribute.Name;
+                        actionsDict[actionName] = actionType;
                     }
                 }
                 catch (Exception ex)
@@ -92,7 +94,8 @@ namespace GPTUnity.Helpers
                     parameters = new
                     {
                         type = "object",
-                        properties = parameters
+                        properties = parameters,
+                        additionalProperties = false
                     },
                     required,
                 };
@@ -143,27 +146,14 @@ namespace GPTUnity.Helpers
             foreach (var property in actionType.GetProperties())
             {
                 var attribute = property.GetCustomAttribute<GPTParameterAttribute>();
-                if (attribute == null)
+                if (attribute == null || !attribute.Expose)
                     continue;
-                
-                if (property.PropertyType.IsEnum)
-                {
-                    // If the property is an enum, we can use its names as the enum values
-                    var enumValues = Enum.GetNames(property.PropertyType);
-                    parameters[property.Name] = new
-                    {
-                        type = "string",
-                        @enum = enumValues,
-                        description = attribute.Description
-                    };
-                    continue;
-                }
 
-                parameters[property.Name] = new
-                {
-                    type = "string",
-                    description = attribute.Description
-                };
+                var parameterName = string.IsNullOrWhiteSpace(attribute.Name)
+                    ? property.Name
+                    : attribute.Name;
+
+                parameters[parameterName] = CreateJsonSchemaForType(property.PropertyType, attribute.Description);
             }
 
             return parameters;
@@ -181,11 +171,13 @@ namespace GPTUnity.Helpers
             foreach (var property in actionType.GetProperties())
             {
                 var attribute = property.GetCustomAttribute<GPTParameterAttribute>();
-                if (attribute != null)
+                if (attribute != null && attribute.Expose)
                 {
                     if (attribute.Required)
                     {
-                        required.Add(property.Name);
+                        required.Add(string.IsNullOrWhiteSpace(attribute.Name)
+                            ? property.Name
+                            : attribute.Name);
                     }
                 }
             }
@@ -218,6 +210,46 @@ namespace GPTUnity.Helpers
         public bool TryGetAction(string functionCallName, out Type type)
         {
             return actions.TryGetValue(functionCallName, out type);
+        }
+
+        private object CreateJsonSchemaForType(Type propertyType, string description)
+        {
+            if (propertyType.IsEnum)
+            {
+                return new
+                {
+                    type = "string",
+                    @enum = Enum.GetNames(propertyType),
+                    description
+                };
+            }
+
+            if (propertyType == typeof(string))
+                return new { type = "string", description };
+
+            if (propertyType == typeof(bool))
+                return new { type = "boolean", description };
+
+            if (propertyType == typeof(int) || propertyType == typeof(long))
+                return new { type = "integer", description };
+
+            if (propertyType == typeof(float) || propertyType == typeof(double) || propertyType == typeof(decimal))
+                return new { type = "number", description };
+
+            if (propertyType.IsArray)
+            {
+                return new
+                {
+                    type = "array",
+                    items = CreateJsonSchemaForType(propertyType.GetElementType(), null),
+                    description
+                };
+            }
+
+            if (propertyType.IsClass)
+                return new { type = "object", description };
+
+            return new { type = "string", description };
         }
     }
 }

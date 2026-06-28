@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Get The Bounds of an Object")]
+    [GPTAction("Gets the renderer bounds of a GameObject, optionally including all children.", Name = "get_object_bounds")]
     public class GetObjectBoundsAction : GPTAssistantAction
     {
-        [GPTParameter("Name of the GameObject")]
+        [GPTParameter("GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
         
-        [GPTParameter("Include the children in bounds calculations")]
+        [GPTParameter("Include child GameObjects when calculating bounds.", Name = "include_children")]
         public bool IncludeChildren { get; set; }
 
         public override async Task<string> Execute()

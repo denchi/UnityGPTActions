@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Retrieves a value from a Project Setting asset.")]
+    [GPTAction("Gets a serialized value from a Unity ProjectSettings asset by property path.", Name = "get_project_setting")]
     public class RetrieveProjectSettingAction : GPTAssistantAction
     {
-        [GPTParameter("Settings asset name, e.g. 'ProjectSettings/PlayerSettings.asset'")]
+        [GPTParameter("ProjectSettings asset path, for example 'ProjectSettings/PlayerSettings.asset'.")]
         public string AssetPath { get; set; }
 
-        [GPTParameter("Serialized property path, e.g. 'productName'")]
+        [GPTParameter("Serialized property path, for example 'productName' or 'defaultScreenWidth'.")]
         public string PropertyPath { get; set; }
 
         // public override string Description =>

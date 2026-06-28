@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Creates, opens, or saves Unity scenes.")]
+    [GPTAction("Creates, opens, saves, or saves-as Unity scenes. Use this for scene file lifecycle operations.", Name = "manage_scene")]
     public class ManageSceneAction : GPTAssistantAction
     {
         public enum SceneOperation

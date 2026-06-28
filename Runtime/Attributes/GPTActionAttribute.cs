@@ -4,6 +4,8 @@ using System;
 public sealed class GPTActionAttribute : Attribute
 {
     public string Description { get; set; }
+    public string Name { get; set; }
+    public bool Expose { get; set; } = true;
     public ActionRunMode Mode { get; set; }
     
     public GPTActionAttribute() { }

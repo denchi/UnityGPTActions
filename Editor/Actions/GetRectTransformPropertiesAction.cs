@@ -5,10 +5,10 @@ using UnityEngine;
 
 namespace GPTUnity.Actions
 {
-    [GPTAction("Gets RectTransform properties of a UI element")]
+    [GPTAction("Gets common RectTransform layout properties from a UI GameObject.", Name = "get_rect_transform")]
     public class GetRectTransformPropertiesAction : GPTAssistantAction
     {
-        [GPTParameter("GameObject name")]
+        [GPTParameter("UI GameObject name or hierarchy path.", true, Name = "object_name_or_path")]
         public string ObjectName { get; set; }
 
         public override async Task<string> Execute()

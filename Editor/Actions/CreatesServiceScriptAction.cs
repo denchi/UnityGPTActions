@@ -30,7 +30,7 @@ namespace strange.Game.Services
     }
 }
 
-The IGameService is the base class that all services inherit from.")]
+The IGameService is the base class that all services inherit from.", Expose = false)]
     public class CreatesServiceScriptAction : CreateFileActionBase
     {
         [GPTParameter("Generated Script Code")]

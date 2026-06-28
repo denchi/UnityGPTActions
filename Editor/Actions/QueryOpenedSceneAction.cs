@@ -8,22 +8,23 @@ using UnityEngine.SceneManagement;
 namespace GPTUnity.Actions
 {
     [GPTAction(
-        "Queries the currently opened Unity scene, providing detailed information about game objects, components, and hierarchy.")]
+        "Inspects the currently open Unity scene and reports hierarchy, GameObjects, and components. Use this to explore scene state before making edits.",
+        Name = "get_scene_hierarchy")]
     public class QueryOpenedSceneAction : GPTAssistantAction
     {
-        [GPTParameter("The game object name to query information about. Use if know the exact name of the GameObject. ")]
+        [GPTParameter("Optional exact GameObject name to inspect. Leave empty to describe the whole scene.")]
         public string TargetName { get; set; }
 
-        [GPTParameter("The name of the type of the component to query information about")]
+        [GPTParameter("Optional component type name to find all matching GameObjects, such as 'Camera', 'Light', or 'MeshRenderer'.")]
         public string TargetTypeName { get; set; }
         
-        [GPTParameter("Should Include Transform Information")]
+        [GPTParameter("Include Transform position, rotation, and scale details.")]
         public bool IncludeTransform { get; set; }
         
-        [GPTParameter("Should Include Children GameObjects")]
+        [GPTParameter("Include child GameObjects recursively.")]
         public bool IncludeChildren { get; set; }
         
-        [GPTParameter("Should Include Components Information")]
+        [GPTParameter("Include non-Transform component information.")]
         public bool IncludeOtherComponents { get; set; }
 
         public override async Task<string> Execute()
