@@ -55,20 +55,26 @@ namespace Mcp
             var tools = new List<McpToolDefinition>();
             foreach (var actionType in CollectActionTypes())
             {
+                var attribute = actionType.GetCustomAttribute<GPTActionAttribute>();
+                if (attribute == null || !attribute.Expose)
+                    continue;
+
                 var description = GetTypeDescription(actionType);
                 var parameters = GetFunctionParameters(actionType);
                 var required = GetRequiredParameterNames(actionType);
+                var toolName = string.IsNullOrWhiteSpace(attribute.Name) ? actionType.Name : attribute.Name;
 
                 var inputSchema = new Dictionary<string, object>
                 {
                     ["type"] = "object",
                     ["properties"] = parameters,
-                    ["required"] = required
+                    ["required"] = required,
+                    ["additionalProperties"] = false
                 };
 
                 tools.Add(new McpToolDefinition
                 {
-                    name = actionType.Name,
+                    name = toolName,
                     description = description ?? "Dynamically discovered action class",
                     inputSchema = inputSchema,
                     enabled = true
@@ -92,10 +98,16 @@ namespace Mcp
                     var types = assembly.GetTypes();
                     var assignableTypes = types.Where(t => BaseActionType.IsAssignableFrom(t));
                     var actionTypes = assignableTypes.Where(t =>
-                        !t.IsAbstract &&
-                        t.GetCustomAttribute<GPTActionAttribute>() != null);
+                        !t.IsAbstract);
 
-                    actions.AddRange(actionTypes);
+                    foreach (var actionType in actionTypes)
+                    {
+                        var attribute = actionType.GetCustomAttribute<GPTActionAttribute>();
+                        if (attribute != null && attribute.Expose)
+                        {
+                            actions.Add(actionType);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -113,26 +125,14 @@ namespace Mcp
             foreach (var property in actionType.GetProperties())
             {
                 var attribute = property.GetCustomAttribute<GPTParameterAttribute>();
-                if (attribute == null)
+                if (attribute == null || !attribute.Expose)
                     continue;
 
-                if (property.PropertyType.IsEnum)
-                {
-                    var enumValues = Enum.GetNames(property.PropertyType);
-                    parameters[property.Name] = new
-                    {
-                        type = "string",
-                        @enum = enumValues,
-                        description = attribute.Description
-                    };
-                    continue;
-                }
+                var parameterName = string.IsNullOrWhiteSpace(attribute.Name)
+                    ? property.Name
+                    : attribute.Name;
 
-                parameters[property.Name] = new
-                {
-                    type = "string",
-                    description = attribute.Description
-                };
+                parameters[parameterName] = CreateJsonSchemaForType(property.PropertyType, attribute.Description);
             }
 
             return parameters;
@@ -144,9 +144,11 @@ namespace Mcp
             foreach (var property in actionType.GetProperties())
             {
                 var attribute = property.GetCustomAttribute<GPTParameterAttribute>();
-                if (attribute != null && attribute.Required)
+                if (attribute != null && attribute.Expose && attribute.Required)
                 {
-                    required.Add(property.Name);
+                    required.Add(string.IsNullOrWhiteSpace(attribute.Name)
+                        ? property.Name
+                        : attribute.Name);
                 }
             }
 
@@ -157,6 +159,46 @@ namespace Mcp
         {
             var attribute = actionType.GetCustomAttribute<GPTActionAttribute>();
             return attribute != null ? attribute.Description : null;
+        }
+
+        private static object CreateJsonSchemaForType(Type propertyType, string description)
+        {
+            if (propertyType.IsEnum)
+            {
+                return new
+                {
+                    type = "string",
+                    @enum = Enum.GetNames(propertyType),
+                    description
+                };
+            }
+
+            if (propertyType == typeof(string))
+                return new { type = "string", description };
+
+            if (propertyType == typeof(bool))
+                return new { type = "boolean", description };
+
+            if (propertyType == typeof(int) || propertyType == typeof(long))
+                return new { type = "integer", description };
+
+            if (propertyType == typeof(float) || propertyType == typeof(double) || propertyType == typeof(decimal))
+                return new { type = "number", description };
+
+            if (propertyType.IsArray)
+            {
+                return new
+                {
+                    type = "array",
+                    items = CreateJsonSchemaForType(propertyType.GetElementType(), null),
+                    description
+                };
+            }
+
+            if (propertyType.IsClass)
+                return new { type = "object", description };
+
+            return new { type = "string", description };
         }
     }
 }

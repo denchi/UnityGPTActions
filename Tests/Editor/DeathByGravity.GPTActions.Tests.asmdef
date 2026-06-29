@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "DeathByGravity.GPTActions",
+        "DeathByGravity.GPTActions.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
