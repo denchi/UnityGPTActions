@@ -201,7 +201,18 @@ public partial class ChatEditorWindow : EditorWindow
                     
                 if (!_toolCalls.IsToolCallExecuted(toolCall))
                 {
-                    await ExecuteToolAsync(action, toolMessage, toolCall);
+                    if (action is IGPTActionThatShouldNotReplayFromHistory)
+                    {
+                        action.Result = toolMessage.StringContent =
+                            "Skipped automatic replay after script reload. Run this tool again explicitly if needed.";
+
+                        AddMessageVisualElementWithData(toolMessage, action: action);
+                        _toolCalls.MarkToolCallExecuted(toolCall);
+                    }
+                    else
+                    {
+                        await ExecuteToolAsync(action, toolMessage, toolCall);
+                    }
                 }
                 else
                 {
