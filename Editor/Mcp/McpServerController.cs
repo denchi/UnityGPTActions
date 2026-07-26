@@ -245,11 +245,11 @@ namespace Mcp
                 {
                     hasExited = process.HasExited;
                 }
-                catch (InvalidOperationException)
+                catch (ObjectDisposedException)
                 {
                     hasExited = true;
                 }
-                catch (ObjectDisposedException)
+                catch (InvalidOperationException)
                 {
                     hasExited = true;
                 }
@@ -308,11 +308,7 @@ namespace Mcp
                 listener.Stop();
                 return true;
             }
-            catch (SocketException)
-            {
-                return false;
-            }
-            catch
+            catch (Exception)
             {
                 return false;
             }
