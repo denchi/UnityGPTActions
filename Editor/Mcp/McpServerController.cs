@@ -230,15 +230,35 @@ namespace Mcp
             HubAgentRegistrar.Stop();
             TryRequestShutdown(settings);
 
-            if (_pythonProcess == null || _pythonProcess.HasExited)
-            {
+            var process = _pythonProcess;
+            _pythonProcess = null;
+
+            if (process == null)
                 return;
-            }
 
             try
             {
-                _pythonProcess.Kill();
-                _pythonProcess.WaitForExit(2000);
+                // Process.HasExited throws when Start failed before an OS process was
+                // associated with this instance. Treat that state as already stopped.
+                var hasExited = false;
+                try
+                {
+                    hasExited = process.HasExited;
+                }
+                catch (InvalidOperationException)
+                {
+                    hasExited = true;
+                }
+                catch (ObjectDisposedException)
+                {
+                    hasExited = true;
+                }
+
+                if (!hasExited)
+                {
+                    process.Kill();
+                    process.WaitForExit(2000);
+                }
             }
             catch (Exception e)
             {
@@ -248,14 +268,13 @@ namespace Mcp
             {
                 try
                 {
-                    _pythonProcess?.Dispose();
+                    process.Dispose();
                 }
                 catch
                 {
                     // ignore dispose errors
                 }
 
-                _pythonProcess = null;
                 Debug.Log("[MCP] MCP server stopped.");
                 McpDiagnostics.Log("Python MCP server stopped.");
             }
