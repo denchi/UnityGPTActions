@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using GPTUnity.Actions.Interfaces;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEngine;
@@ -74,8 +75,8 @@ namespace GPTUnity.Actions
                     var assemblyBytes = File.ReadAllBytes(assemblyPath);
                     var pdbBytes = File.Exists(pdbPath) ? File.ReadAllBytes(pdbPath) : null;
                     var assembly = pdbBytes != null
-                        ? Assembly.Load(assemblyBytes, pdbBytes)
-                        : Assembly.Load(assemblyBytes);
+                        ? System.Reflection.Assembly.Load(assemblyBytes, pdbBytes)
+                        : System.Reflection.Assembly.Load(assemblyBytes);
 
                     var fullTypeName = $"{GeneratedNamespace}.{typeName}";
                     var evalType = assembly.GetType(fullTypeName, throwOnError: true);
@@ -124,7 +125,7 @@ namespace GPTUnity.Actions
                 }
             }
 
-            internal static string BuildWrapperSource(string typeName, string userCode)
+            public static string BuildWrapperSource(string typeName, string userCode)
             {
                 return
 $@"using System;
@@ -147,7 +148,7 @@ namespace {GeneratedNamespace}
 }}";
             }
 
-            internal static string[] CollectReferencePaths()
+            public static string[] CollectReferencePaths()
             {
                 return AppDomain.CurrentDomain
                     .GetAssemblies()
